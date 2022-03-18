@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
+import sys ##
+sys.path.append('/Users/Charl/OneDrive/Bureau/MscIACours/Systèmes_multi-agent/PW4/mesa')
 
 from communication.preferences.CriterionName import CriterionName
 from communication.preferences.CriterionValue import CriterionValue
 from communication.preferences.Item import Item
 from communication.preferences.Value import Value
-
-
 class Preferences:
     """Preferences class.
     This class implements the preferences of an agent.
@@ -79,13 +79,13 @@ class Preferences:
             return best_item       
         # To be completed end
 
-    def is_item_among_top_10_percent(self, item):
+    def is_item_among_top_10_percent(self, item, item_list):
         """
         Return whether a given item is among the top 10 percent of the preferred items.
 
         :return: a boolean, True means that the item is among the favourite ones
         """
-        # To be completed
+        # To be completed start
         
         return is_top_item
 
