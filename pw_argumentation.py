@@ -4,6 +4,7 @@ from zmq import Message
 import numpy as np
 from communication.agent.CommunicatingAgent import CommunicatingAgent
 from communication.message.MessageService import MessageService
+from communication.preferences.CriterionName import CriterionName
 
 class ArgumentAgent(CommunicatingAgent):
     """ ArgumentAgent which inherit from CommunicatingAgent."""
@@ -22,4 +23,5 @@ class ArgumentAgent(CommunicatingAgent):
         
         for item in list_of_items:
             for criter in range(5):
-                value = np.random.choice()
+                value = np.random.choice([0,1,2,3])
+                agent_pref.add_criterion_value(CriterionValue(item,CriterionName.criter, CriterionValue.value))
