@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
+#!python -m communication.preferences.Preferences
 import sys ##
-sys.path.append('/Users/Charl/OneDrive/Bureau/MscIACours/Systèmes_multi-agent/PW4/mesa')
-
+sys.path.append('C:/Users/Charl/OneDrive/Bureau/MscIACours/Systèmes_multi-agent/PW4/mesa/')
 from communication.preferences.CriterionName import CriterionName
 from communication.preferences.CriterionValue import CriterionValue
 from communication.preferences.Item import Item
@@ -85,10 +85,15 @@ class Preferences:
 
         :return: a boolean, True means that the item is among the favourite ones
         """
-        # To be completed start
-        
-        return is_top_item
-
+        # To be completed 
+        i = 0
+        top_ten = len(item_list) // 10
+        for items in item_list:
+            if self.is_preferred_item(items, item):
+                i += 1
+                if i == top_ten+1:
+                    return False
+        return True
 
 if __name__ == '__main__':
     """Testing the Preferences class.
@@ -132,3 +137,5 @@ if __name__ == '__main__':
     print('Electric Engine (for agent 1) = {}'.format(electric_engine.get_score(agent_pref)))
     print('Diesel Engine (for agent 1) = {}'.format(diesel_engine.get_score(agent_pref)))
     print('Most preferred item is : {}'.format(agent_pref.most_preferred([diesel_engine, electric_engine]).get_name()))
+    print('is Diesel Top 10 : {}'.format(agent_pref.is_item_among_top_10_percent(diesel_engine,[diesel_engine, electric_engine])))
+    print('is Electric Top 10 : {}'.format(agent_pref.is_item_among_top_10_percent(electric_engine,[diesel_engine, electric_engine])))
