@@ -1,6 +1,5 @@
 from mesa import Model
 from mesa.time import RandomActivation
-from zmq import Message
 import numpy as np
 from communication.agent.CommunicatingAgent import CommunicatingAgent
 from communication.message.MessageService import MessageService
@@ -9,7 +8,8 @@ from communication.preferences.Preferences import Preferences
 from communication.preferences.CriterionValue import CriterionValue
 from communication.preferences.Item import Item
 from communication.preferences.Value import Value
-
+from communication.message.Message import Message
+from communication.message.MessagePerformative import MessagePerformative
 class ArgumentAgent(CommunicatingAgent):
     """ ArgumentAgent which inherit from CommunicatingAgent."""
     def __init__(self, unique_id, model, name):
@@ -50,13 +50,22 @@ class ArgumentModel(Model):
         diesel_engine = Item("Diesel Engine", "A super cool diesel engine")
         electric_engine = Item("Electric Engine", "A very quiet engine")
         self.list_of_items = [diesel_engine, electric_engine]
+        self.list_of_agents = []
         for i in range(2):
             agent = ArgumentAgent(i, self, "agent_" + str(i))
             agent.generate_preference(self.list_of_items)
             print(agent.get_preference().get_criterion_name_list())
             print("The prefered item for agent_" + str(i) + " is " + agent.get_preference().most_preferred(self.list_of_items).get_name())
             self.schedule.add(agent)
+            self.list_of_agents.append(agent)
         self.running = True
-        
-if __name__ == '__main__':
+
+        #implement situation where A1 propose item and A2 accept item if in top 10% otherwaise ask why
+        self.__messages_service.send_message(Message("agent_0", "agent_1", MessagePerformative.PROPOSE ,self.list_of_items[0]))
+        if self.list_of_agents[1].get_preference().is_item_among_top_10_percent(self.list_of_items[0], self.list_of_items):
+            self.__messages_service.send_message(Message("agent_1", "agent_0", MessagePerformative.ACCEPT ,self.list_of_items[0]))
+        else: 
+            self.__messages_service.send_message(Message("agent_1", "agent_0", MessagePerformative.ASK_WHY ,self.list_of_items[0]))
+
+if __name__ == "__main__":
     model = ArgumentModel()
