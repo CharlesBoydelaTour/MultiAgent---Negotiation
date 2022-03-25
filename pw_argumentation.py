@@ -54,7 +54,7 @@ class ArgumentModel(Model):
             agent = ArgumentAgent(i, self, "agent_" + str(i))
             agent.generate_preference(self.list_of_items)
             print(agent.get_preference().get_criterion_name_list())
-            print(agent.get_preference().most_preferred(self.list_of_items))
+            print("The prefered item for agent_" + str(i) + " is " + agent.get_preference().most_preferred(self.list_of_items).get_name())
             self.schedule.add(agent)
         self.running = True
         
