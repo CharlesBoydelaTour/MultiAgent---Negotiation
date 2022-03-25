@@ -7,6 +7,8 @@ from communication.message.MessageService import MessageService
 from communication.preferences.CriterionName import CriterionName
 from communication.preferences.Preferences import Preferences
 from communication.preferences.CriterionValue import CriterionValue
+from communication.preferences.Item import Item
+from communication.preferences.Value import Value
 
 class ArgumentAgent(CommunicatingAgent):
     """ ArgumentAgent which inherit from CommunicatingAgent."""
@@ -26,21 +28,35 @@ class ArgumentAgent(CommunicatingAgent):
         self.preference.set_criterion_name_list([CriterionName.PRODUCTION_COST, CriterionName.ENVIRONMENT_IMPACT,
                                         CriterionName.CONSUMPTION, CriterionName.DURABILITY,
                                         CriterionName.NOISE])
+        values = {0: Value.VERY_BAD, 1: Value.BAD, 2: Value.AVERAGE, 3: Value.GOOD, 4: Value.VERY_GOOD}
         for item in list_of_items:
             self.preference.add_criterion_value(CriterionValue(item, CriterionName.PRODUCTION_COST,
-                                                          np.random.randint(0, 5)))
+                                                          values[np.random.randint(0, 5)]))
             self.preference.add_criterion_value(CriterionValue(item, CriterionName.CONSUMPTION,
-                                                          np.random.randint(0, 5)))
+                                                          values[np.random.randint(0, 5)]))
             self.preference.add_criterion_value(CriterionValue(item, CriterionName.DURABILITY,
-                                                          np.random.randint(0, 5)))
+                                                          values[np.random.randint(0, 5)]))
             self.preference.add_criterion_value(CriterionValue(item, CriterionName.ENVIRONMENT_IMPACT,
-                                                          np.random.randint(0, 5)))
+                                                          values[np.random.randint(0, 5)]))
             self.preference.add_criterion_value(CriterionValue(item, CriterionName.NOISE,
-                                                          np.random.randint(0, 5)))
+                                                          values[np.random.randint(0, 5)]))
     
+class ArgumentModel(Model):
+    """ArgumentModel which inherit from Model"""
+    def __init__(self):
+        super().__init__()
+        self.schedule = RandomActivation(self)
+        self.__messages_service = MessageService(self.schedule)
+        diesel_engine = Item("Diesel Engine", "A super cool diesel engine")
+        electric_engine = Item("Electric Engine", "A very quiet engine")
+        self.list_of_items = [diesel_engine, electric_engine]
+        for i in range(2):
+            agent = ArgumentAgent(i, self, "agent_" + str(i))
+            agent.generate_preference(self.list_of_items)
+            print(agent.get_preference().get_criterion_name_list())
+            print(agent.get_preference().most_preferred(self.list_of_items))
+            self.schedule.add(agent)
+        self.running = True
+        
 if __name__ == '__main__':
-    """Testing the ArgumentAgent class.
-    """
-    agent_pref = ArgumentAgent(1, None, "agent")
-    agent_pref.generate_preference(["item1", "item2"])
-    print(agent_pref.get_preference().get_criterion_name_list())
+    model = ArgumentModel()
