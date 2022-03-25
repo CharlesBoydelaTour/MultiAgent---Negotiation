@@ -54,7 +54,7 @@ class ArgumentModel(Model):
         for i in range(2):
             agent = ArgumentAgent(i, self, "agent_" + str(i))
             agent.generate_preference(self.list_of_items)
-            print(agent.get_preference().get_criterion_name_list())
+            #print(agent.get_preference().get_criterion_name_list())
             print("The prefered item for agent_" + str(i) + " is " + agent.get_preference().most_preferred(self.list_of_items).get_name())
             self.schedule.add(agent)
             self.list_of_agents.append(agent)
@@ -64,8 +64,11 @@ class ArgumentModel(Model):
         self.__messages_service.send_message(Message("agent_0", "agent_1", MessagePerformative.PROPOSE ,self.list_of_items[0]))
         if self.list_of_agents[1].get_preference().is_item_among_top_10_percent(self.list_of_items[0], self.list_of_items):
             self.__messages_service.send_message(Message("agent_1", "agent_0", MessagePerformative.ACCEPT ,self.list_of_items[0]))
-        else: 
+            self.__messages_service.send_message(Message("agent_0", "agent_1", MessagePerformative.COMMIT ,self.list_of_items[0]))
+            self.__messages_service.send_message(Message("agent_1", "agent_0", MessagePerformative.COMMIT ,self.list_of_items[0]))
+        else:   
             self.__messages_service.send_message(Message("agent_1", "agent_0", MessagePerformative.ASK_WHY ,self.list_of_items[0]))
+            self.__messages_service.send_message(Message("agent_0", "agent_1", MessagePerformative.ARGUE ,self.list_of_items[0]))
 
-if __name__ == "__main__":
+if __name__  == "__main__":
     model = ArgumentModel()
