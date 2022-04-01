@@ -10,7 +10,6 @@ from communication.preferences.Item import Item
 from communication.preferences.Value import Value
 from communication.message.Message import Message
 from communication.message.MessagePerformative import MessagePerformative
-
 class ArgumentAgent(CommunicatingAgent):
     """ ArgumentAgent which inherit from CommunicatingAgent."""
     def __init__(self, unique_id, model, name):
