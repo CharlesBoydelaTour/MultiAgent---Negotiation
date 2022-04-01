@@ -40,7 +40,37 @@ class ArgumentAgent(CommunicatingAgent):
                                                           values[np.random.randint(0, 5)]))
             self.preference.add_criterion_value(CriterionValue(item, CriterionName.NOISE,
                                                           values[np.random.randint(0, 5)]))
-    
+
+            
+    def generate_manual_preferences(self, list_of_items, evaluations ):
+        # To be completed
+        """give a score for each item for each agent""" 
+        self.preference = Preferences()
+        self.preference.set_criterion_name_list([CriterionName.PRODUCTION_COST, CriterionName.ENVIRONMENT_IMPACT,
+                                        CriterionName.CONSUMPTION, CriterionName.DURABILITY,
+                                       CriterionName.NOISE])
+        values = {1: Value.VERY_BAD, 2: Value.BAD, 3: Value.GOOD, 4: Value.VERY_GOOD}
+
+        for item in list_of_items:
+
+            if str(item) == "Diesel Engine (A super cool diesel engine)":
+                evaluation = evaluations[0]
+            elif str(item) == "Electric Engine (A very quiet engine)":
+                evaluation = evaluations[1]
+            
+            self.preference.add_criterion_value(CriterionValue(item, CriterionName.PRODUCTION_COST,
+                                                      values[evaluation[0]]))
+            self.preference.add_criterion_value(CriterionValue(item, CriterionName.CONSUMPTION,
+                                                      values[evaluation[1]]))
+            self.preference.add_criterion_value(CriterionValue(item, CriterionName.DURABILITY,
+                                                      values[evaluation[2]]))
+            self.preference.add_criterion_value(CriterionValue(item, CriterionName.ENVIRONMENT_IMPACT,
+                                                      values[evaluation[3]]))
+            self.preference.add_criterion_value(CriterionValue(item, CriterionName.NOISE,
+                                                          values[evaluation[4]]))
+        
+            
+            
 class ArgumentModel(Model):
     """ArgumentModel which inherit from Model"""
     def __init__(self):
@@ -50,10 +80,17 @@ class ArgumentModel(Model):
         diesel_engine = Item("Diesel Engine", "A super cool diesel engine")
         electric_engine = Item("Electric Engine", "A very quiet engine")
         self.list_of_items = [diesel_engine, electric_engine]
+        ##########################Manual Evaluations####################
+        self.evaluations = [[[4, 3, 4, 1, 2],[2, 1, 3, 4, 4]],
+                            [[3, 2, 3, 1, 1],[3, 2, 2, 4, 4]]]
+        ################################################################
         self.list_of_agents = []
         for i in range(2):
             agent = ArgumentAgent(i, self, "agent_" + str(i))
             agent.generate_preference(self.list_of_items)
+            ##########################Manual Evaluations#################################
+            #agent.generate_manual_preferences(self.list_of_items, self.evaluations[i])
+            ############################################################################
             #print(agent.get_preference().get_criterion_name_list())
             print("The prefered item for agent_" + str(i) + " is " + agent.get_preference().most_preferred(self.list_of_items).get_name())
             self.schedule.add(agent)
