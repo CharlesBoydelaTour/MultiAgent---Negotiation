@@ -10,6 +10,7 @@ from communication.preferences.Item import Item
 from communication.preferences.Value import Value
 from communication.message.Message import Message
 from communication.message.MessagePerformative import MessagePerformative
+
 class ArgumentAgent(CommunicatingAgent):
     """ ArgumentAgent which inherit from CommunicatingAgent."""
     def __init__(self, unique_id, model, name):
@@ -61,14 +62,19 @@ class ArgumentModel(Model):
         self.running = True
 
         #implement situation where A1 propose item and A2 accept item if in top 10% otherwaise ask why
-        self.__messages_service.send_message(Message("agent_0", "agent_1", MessagePerformative.PROPOSE ,self.list_of_items[0]))
-        if self.list_of_agents[1].get_preference().is_item_among_top_10_percent(self.list_of_items[0], self.list_of_items):
-            self.__messages_service.send_message(Message("agent_1", "agent_0", MessagePerformative.ACCEPT ,self.list_of_items[0]))
-            self.__messages_service.send_message(Message("agent_0", "agent_1", MessagePerformative.COMMIT ,self.list_of_items[0]))
-            self.__messages_service.send_message(Message("agent_1", "agent_0", MessagePerformative.COMMIT ,self.list_of_items[0]))
+        #find the top item for agent 0
+        top_item = self.list_of_agents[0].get_preference().most_preferred(self.list_of_items)
+        self.__messages_service.send_message(Message("agent_0", "agent_1", MessagePerformative.PROPOSE ,top_item))
+        if self.list_of_agents[1].get_preference().is_item_among_top_10_percent(top_item, self.list_of_items):
+            print(Message("agent_1", "agent_0", MessagePerformative.ACCEPT ,top_item))
+            self.__messages_service.send_message(Message("agent_1", "agent_0", MessagePerformative.ACCEPT ,top_item))
+            self.__messages_service.send_message(Message("agent_0", "agent_1", MessagePerformative.COMMIT ,top_item))
+            self.__messages_service.send_message(Message("agent_1", "agent_0", MessagePerformative.COMMIT ,top_item))
+            self.list_of_items.remove(top_item)
         else:   
-            self.__messages_service.send_message(Message("agent_1", "agent_0", MessagePerformative.ASK_WHY ,self.list_of_items[0]))
-            self.__messages_service.send_message(Message("agent_0", "agent_1", MessagePerformative.ARGUE ,self.list_of_items[0]))
+            print(Message("agent_1", "agent_0", MessagePerformative.ASK_WHY ,top_item))
+            self.__messages_service.send_message(Message("agent_1", "agent_0", MessagePerformative.ASK_WHY ,top_item))
+            self.__messages_service.send_message(Message("agent_0", "agent_1", MessagePerformative.ARGUE ,top_item))
 
 if __name__  == "__main__":
     model = ArgumentModel()
