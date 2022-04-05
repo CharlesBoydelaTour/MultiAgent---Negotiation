@@ -15,6 +15,7 @@ class Argument:
         couple_values_list:
     """
 
+
     def __init__(self, boolean_decision, item):
         """Creates a new Argument.
         """
@@ -38,40 +39,43 @@ class Argument:
         param item : Item - name of the item
         return : list of all premisses PRO an item ( sorted by order of importance based on agent 's preferences)  
         """
-        list_supporting_proposal = []
-        for criterion in preferences.get_criteria_list():
-            if preferences.get_criterion_value(criterion, item) == "GOOD" or preferences.get_criterion_value(criterion, item) == "VERY_GOOD":
-                list_supporting_proposal.append(criterion)
-        return list_supporting_proposal
-    
+        list_supporting_proposals = []
+
+        for criterion_name in preferences.get_criterion_name_list():
+            value = preferences.get_value(item, criterion_name)
+
+            if value in ["GOOD" , "VERY_GOOD"]:
+                premisse = self.add_premiss_couple_values(criterion_name, value)
+                list_supporting_proposals.append(premisse)
+        return list_supporting_proposals
+
+
     def List_attacking_proposal ( self , item , preferences ) :
         """ Generate a list of premisses which can be used to attack an item
             param item : Item - name of the item
             return : list of all premisses CON an item ( sorted by order of importance based on preferences )
         """
-        list_rejecting_proposal = []
-        for criterion in preferences.get_criteria_list():
-            if preferences.get_criterion_value(criterion, item) == "BAD" or preferences.get_criterion_value(criterion, item) == "VERY_BAD":
-                list_rejecting_proposal.append(criterion)
-        return list_rejecting_proposal
+        list_attacking_proposals = []
+        for criterion_name in preferences.get_criterion_name_list():
+            value = preferences.get_value(item, criterion_name)
+
+            if value in ["BAD" , "VERY_BAD"]:
+                premisse = self.add_premiss_couple_values(criterion_name, value)
+                list_attacking_proposals.append(premisse)
+
+        return list_attacking_proposals
+
     
-    def support_proposal ( self , item , preferences ) :
+    def argument ( self , item, preferences  ) :
         """Used when the agent receives " ASK_WHY " after having proposed an item
             param item : str - name of the item which was proposed
             return : string - the strongest supportive argument
         """
-        if self.__decision:
-            list_supporting_proposal = self.List_supporting_proposal(item, preferences)
-            #sort by best criterion
-            list_supporting_proposal.sort(key=lambda x: preferences.get_criterion_value(x, item), reverse=True)
-            #generate argument
-            self.add_premiss_couple_values(list_supporting_proposal[0], preferences.get_criterion_value(list_supporting_proposal[0], item))
-            return list_supporting_proposal[0]
+        if self.__decision:        
+            #print(item.get_name())
+            #print(self.List_supporting_proposal(item , preferences))
+            return (item.get_name(), self.List_supporting_proposal(item , preferences))
+
         else:
-            list_rejecting_proposal = self.List_attacking_proposal(item, preferences)
-            #sort by best criterion
-            list_rejecting_proposal.sort(key=lambda x: preferences.get_criterion_value(x, item), reverse=False)
-            #generate argument
-            self.add_premiss_couple_values(list_rejecting_proposal[0], preferences.get_criterion_value(list_rejecting_proposal[0], item))
-            return list_rejecting_proposal[0]
+            return (item.get_name(), self.List_attacking_proposal(item , preferences))
     
