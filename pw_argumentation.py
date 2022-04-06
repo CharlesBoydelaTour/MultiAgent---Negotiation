@@ -123,7 +123,18 @@ class ArgumentModel(Model):
                     print(f'Message {i}', message)
                     print(15*' ' + 15*'-' )
 
+        def generate_arg_message(i, message):
+                    self.__messages_service.send_message(message)
+                    from_agent = message.get_exp()
+                    to_agent=  message.get_dest()
+                    message_performative=  message.get_performative()
+                    content= message.get_content()
+                    content = self.__str__(content)
+                    message=Message(from_agent, to_agent, message_performative, content)
+                    print(f'Message {i}', message.__str__())
+                    print(15*' ' + 15*'-' )
 
+                    
         proposed_item = self.list_of_items[0]
 
         
@@ -140,6 +151,7 @@ class ArgumentModel(Model):
             msg_2 = Message("agent_1", "agent_0", MessagePerformative.ACCEPT ,proposed_item.get_name())
             generate_message(2, msg_2)
 
+
             msg_3 = Message("agent_0", "agent_1", MessagePerformative.COMMIT ,proposed_item.get_name())
             generate_message(3, msg_3)
 
@@ -150,13 +162,43 @@ class ArgumentModel(Model):
         else:   
             msg_2 = Message("agent_1", "agent_0", MessagePerformative.ASK_WHY ,proposed_item.get_name())
             generate_message(2, msg_2)
+            #print(msg_2.get_performative())
 
-            ARG = Argument(True, proposed_item)
-            arg = ARG.argument(proposed_item, self.list_of_agents[0].get_preference())
+            ARG_support = Argument(True, proposed_item)
+            ARG_attack = Argument(False, proposed_item)
+            arg_why = ARG_support.argument_why(proposed_item, self.list_of_agents[0].get_preference())
 
-            msg_3 = Message("agent_0", "agent_1", MessagePerformative.ARGUE ,arg)
-            generate_message(3, msg_3)
+            #print(arg_why)
 
+            msg_3 = Message("agent_0", "agent_1", MessagePerformative.ARGUE ,arg_why)
+            generate_arg_message(3, msg_3)
+
+            decision, item, argument_recu = msg_3.get_content()
+
+            if len(argument_recu):
+                criterion_recu = argument_recu[0].get_criterion()
+            #else:
+                #assert argument_recu[0].get_best_criterion_name == argument_recu[1].get_criterion()
+            
+            arg_to_arg = ARG_attack.argument_to_argument(proposed_item, self.list_of_agents[1].get_preference(), criterion_recu)
+
+            msg_4 = Message("agent_1", "agent_0", MessagePerformative.ARGUE ,arg_to_arg)
+            generate_arg_message(4, msg_4)
+
+            #print(criterion_recu)
+            
+            
+    def __str__(self, arg):
+        
+        decision, item, argument = arg
+        if decision:
+            str = f"{item.get_name()}\t<=\t"
+        else:
+            str = f"not {item.get_name()} \t<=\t"
+        for element in argument:
+            str += element.__str__() + ',  '
+        return str
+            
 
 
 if __name__ == "__main__":
