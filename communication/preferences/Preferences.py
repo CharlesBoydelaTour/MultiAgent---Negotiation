@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
-#!python -m communication.preferences.Preferences
-import sys ##
-sys.path.append('C:/Users/Charl/OneDrive/Bureau/MscIACours/Systèmes_multi-agent/PW4/mesa/')
+import sys
+sys.path.append('/Users/zack/Desktop/MSC IA/Courses/MAS/Projects/project-2/mesa')
 from communication.preferences.CriterionName import CriterionName
 from communication.preferences.CriterionValue import CriterionValue
 from communication.preferences.Item import Item
 from communication.preferences.Value import Value
+
+
 class Preferences:
     """Preferences class.
     This class implements the preferences of an agent.
@@ -66,7 +67,7 @@ class Preferences:
     def most_preferred(self, item_list):
         """Returns the most preferred item from a list.
         """
-        # To be completed start
+        # To be completed
         if len(item_list) == 0:
             return None
         elif len(item_list) == 1:
@@ -76,8 +77,8 @@ class Preferences:
             for item in item_list[1:]:
                 if self.is_preferred_item(item, best_item):
                     best_item = item
-            return best_item       
-        # To be completed end
+            return best_item   
+
 
     def is_item_among_top_10_percent(self, item, item_list):
         """
@@ -85,15 +86,18 @@ class Preferences:
 
         :return: a boolean, True means that the item is among the favourite ones
         """
-        # To be completed 
-        i = 0
-        top_ten = len(item_list) // 10
-        for items in item_list:
-            if self.is_preferred_item(items, item):
-                i += 1
-                if i == top_ten+1:
+        # To be completed
+        
+        ten = len(item_list) // 10
+        c = 0
+        for item2 in item_list:
+            if self.is_preferred_item(item2, item):
+                c += 1
+                if c == ten+1:
                     return False
+
         return True
+
 
 if __name__ == '__main__':
     """Testing the Preferences class.
@@ -113,7 +117,7 @@ if __name__ == '__main__':
     agent_pref.add_criterion_value(CriterionValue(diesel_engine, CriterionName.ENVIRONMENT_IMPACT,
                                                   Value.VERY_BAD))
     agent_pref.add_criterion_value(CriterionValue(diesel_engine, CriterionName.NOISE,
-                                                  Value.VERY_BAD))
+                                                  Value.BAD))
 
     electric_engine = Item("Electric Engine", "A very quiet engine")
     agent_pref.add_criterion_value(CriterionValue(electric_engine, CriterionName.PRODUCTION_COST,
@@ -128,14 +132,26 @@ if __name__ == '__main__':
                                                   Value.VERY_GOOD))
 
     """test list of preferences"""
-    print(diesel_engine)
-    print(electric_engine)
-    print(diesel_engine.get_value(agent_pref, CriterionName.PRODUCTION_COST))
-    print(agent_pref.is_preferred_criterion(CriterionName.CONSUMPTION, CriterionName.NOISE))
+    print(80*'=')
+    print('test ICED:   ', diesel_engine)
+    print(20*'-')
+    print('test E:   ', electric_engine)
+    print(20*'-')
+    print('Value on Production_Cost for ICED:   ', diesel_engine.get_value(agent_pref, CriterionName.PRODUCTION_COST))
+    print(20*'-')
+    print('test Consumption is important than Noise:   ', agent_pref.is_preferred_criterion(CriterionName.CONSUMPTION, CriterionName.NOISE))
+    print(20*'-')
     print('Electric Engine > Diesel Engine : {}'.format(agent_pref.is_preferred_item(electric_engine, diesel_engine)))
+    print(20*'-')
     print('Diesel Engine > Electric Engine : {}'.format(agent_pref.is_preferred_item(diesel_engine, electric_engine)))
+    print(20*'-')
     print('Electric Engine (for agent 1) = {}'.format(electric_engine.get_score(agent_pref)))
+    print(20*'-')
     print('Diesel Engine (for agent 1) = {}'.format(diesel_engine.get_score(agent_pref)))
+    print(20*'-')
     print('Most preferred item is : {}'.format(agent_pref.most_preferred([diesel_engine, electric_engine]).get_name()))
+    print(20*'-')
     print('is Diesel Top 10 : {}'.format(agent_pref.is_item_among_top_10_percent(diesel_engine,[diesel_engine, electric_engine])))
-    print('is Electric Top 10 : {}'.format(agent_pref.is_item_among_top_10_percent(electric_engine,[diesel_engine, electric_engine])))
+    print(20*'-')
+    print('is Electric Top 10 : {}'.format(agent_pref.is_item_among_top_10_percent(electric_engine,[diesel_engine, electric_engine, electric_engine, electric_engine, electric_engine])))
+    print(80*'=')
