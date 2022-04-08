@@ -138,17 +138,20 @@ class Argument:
 
         """
         argument =[]
-                
+        if not self.__decision:        
 
-        list_attacking_proposals = self.List_attacking_proposal(item , preferences)
-        if len(list_attacking_proposals) >= 1:
+            list_attacking_proposals = self.List_attacking_proposal(item , preferences)
+            if len(list_attacking_proposals) >= 1:
                 for i, criterion in enumerate(list_attacking_proposals):
                     if preferences.is_preferred_criterion(criterion_name_1 = criterion, criterion_name_2 = criterion_recu):
                         
                         argument.append(Comparison(criterion, criterion_recu))
                         argument.append(self.__couple_values_list[i])
                         break
-        else:
+            else:
                 print('accept pour le moment')
 
-        return self.__decision, item, argument
+            return self.__decision, item, argument
+
+        else:
+            
