@@ -17,7 +17,7 @@ class Comparison:
         self.__worst_criterion_name = worst_criterion_name
     
     
-    def get_best_criterion_name(self):
+    def get_criterion(self):
         """ Return the preferable criterion name.
         """
         return self.__best_criterion_name

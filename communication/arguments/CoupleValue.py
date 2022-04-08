@@ -31,4 +31,3 @@ class CoupleValue:
         #print(self.__criterion_name)
 
         return f"{self.__criterion_name.name} = {self.__value.name}"
-        

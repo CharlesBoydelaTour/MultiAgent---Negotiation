@@ -25,7 +25,7 @@ class Message:
         """ Return Message as a String.
         """
         return "From " + str(self.__from_agent) + " to " + str(self.__to_agent) \
-               + " (" + str(self.__message_performative) + ") " + str(self.__content)
+               + " (" + str(self.__message_performative) + ") " + self._strcontent_(self.__content)
 
     def get_exp(self):
         """ Return the sender of the message.
@@ -46,3 +46,14 @@ class Message:
         """ Return the content of the message.
         """
         return self.__content
+    
+    def _strcontent_(self, arg):
+        
+        decision, item, argument = arg
+        if decision:
+            str = f"{item.get_name()}\t<=\t"
+        else:
+            str = f"not {item.get_name()} \t<=\t"
+        for element in argument:
+            str += element.__str__() + ',  '
+        return str

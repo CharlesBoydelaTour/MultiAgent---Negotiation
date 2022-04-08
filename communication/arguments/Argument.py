@@ -107,31 +107,30 @@ class Argument:
         return list_attacking_proposals
 
 
+        
     
-    def argument_why ( self , item, preferences  ) :
+    def argument_why ( self , item, preferences) :
         """Used when the agent receives " ASK_WHY " after having proposed an item
             param item : str - name of the item which was proposed
             return : string - the strongest supportive argument
         """
         argument =[]
-        if self.__decision:        
-            #print(item.get_name())
-            #crit_name = self.List_supporting_proposal(item , preferences)[0]
-            #value = self.List_supporting_proposal(item , preferences)[1]
-            self.List_supporting_proposal(item , preferences)
-            argument.append(self.__couple_values_list[0])
+       
+        #print(item.get_name())
+        #crit_name = self.List_supporting_proposal(item , preferences)[0]
+        #value = self.List_supporting_proposal(item , preferences)[1]
+        self.List_supporting_proposal(item , preferences)
+        argument.append(self.__couple_values_list[0])
 
 
 
-            #print(argument)
-            #argument.__str__()
-            #print(argument.__str__())
-            #message = f"{item.get_name()} <= {argument.__str__()}"
+        #print(argument)
+        #argument.__str__()
+        #print(argument.__str__())
+        #message = f"{item.get_name()} <= {argument.__str__()}"
 
-            return self.__decision, item, argument
+        return self.__decision, item, argument
 
-        else:
-            print('ERROR pour le moment')
 
     def argument_to_argument ( self , item, preferences, criterion_recu  ) :
         """
@@ -139,20 +138,17 @@ class Argument:
 
         """
         argument =[]
-        if not self.__decision:        
+                
 
-            list_attacking_proposals = self.List_attacking_proposal(item , preferences)
-            if len(list_attacking_proposals) >= 1:
+        list_attacking_proposals = self.List_attacking_proposal(item , preferences)
+        if len(list_attacking_proposals) >= 1:
                 for i, criterion in enumerate(list_attacking_proposals):
                     if preferences.is_preferred_criterion(criterion_name_1 = criterion, criterion_name_2 = criterion_recu):
                         
                         argument.append(Comparison(criterion, criterion_recu))
                         argument.append(self.__couple_values_list[i])
                         break
-            else:
+        else:
                 print('accept pour le moment')
 
-            return self.__decision, item, argument
-
-        else:
-            print('ERROR pour le moment')   
+        return self.__decision, item, argument
