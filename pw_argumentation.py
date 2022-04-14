@@ -1,5 +1,5 @@
 from mesa import Model
-from mesa.time import RandomActivation
+from mesa.time import RandomActivation, BaseScheduler
 import numpy as np
 from communication.agent.CommunicatingAgent import CommunicatingAgent
 from communication.message.MessageService import MessageService
@@ -12,6 +12,7 @@ from communication.message.Message import Message
 from communication.message.MessagePerformative import MessagePerformative
 from communication.arguments.Argument import Argument
 from communication.mailbox.Mailbox import Mailbox
+from communication.arguments.CoupleValue import CoupleValue
 
 
 
@@ -31,6 +32,7 @@ class ArgumentAgent(CommunicatingAgent):
         self.preference = self.generate_manual_preferences(self.list_of_items, self.profile)
         self.commit_item =[]
         self.not_proposed_items = [i.get_name() for i in self.list_of_items]
+        self.used_arguments = []
         self.str_to_obj = {}
         for i in self.not_proposed_items:
             for object in self.list_of_items:
@@ -42,20 +44,52 @@ class ArgumentAgent(CommunicatingAgent):
         # read mailbox
         list_messages = self.get_new_messages()
         if len(list_messages) == 0:
-            item = self.preference.most_preferred([self.str_to_obj[item] for item in self.not_proposed_items])
-            self.not_proposed_items.remove(item.get_name())
+            print ('on est là')
+            if len(self.not_proposed_items)>0:
+                item = self.preference.most_preferred([self.str_to_obj[item] for item in self.not_proposed_items])
+                #self.not_proposed_items.remove(item.get_name())
+            else :
+                self.not_proposed_items = [i.get_name() for i in self.list_of_items]
+                self.str_to_obj = {}
+                for i in self.not_proposed_items:
+                    for object in self.list_of_items:
+                        if object.get_name() == i:
+                            self.str_to_obj[i] = object
+
+                item = self.preference.most_preferred([self.str_to_obj[item] for item in self.not_proposed_items])
+                #self.not_proposed_items.remove(item.get_name())
             #select a random agent to porpose item (not self)
             dest = np.random.choice(self.model.schedule.agents)
             while dest.id == self.id:
                 dest = np.random.choice(self.model.schedule.agents)
-            print(self.model.schedule.agents)
+            #print(self.model.schedule.agents)
             item = True, item, ''
             self.send_message(Message(self.get_name(), dest.get_name(), MessagePerformative.PROPOSE, item))
         else:
+            print(len(list_messages))
             for message in list_messages:
                 print(message)
                 #treat message
                 self.treat_message(message)
+
+    def select_argument(self, arguments, used_arguments):
+
+        result_to_use = None
+        for argument in arguments:
+            cr1, val1, cr2 = self.get_argument(argument)            
+            if not( (cr1, val1, cr2) in used_arguments):
+                result_to_use = argument
+                break
+        return result_to_use
+
+    def get_argument(self, arg):
+        cr1 = arg[0].get_criterion().name
+        val1 = arg[0].get_value().value
+        cr2 = ' '
+        if len(arg) > 1:
+            cr2 = arg[1].get_worst_criterion_name().name
+
+        return cr1, val1, cr2
             
     def treat_message(self, message):
         #extract information from message
@@ -63,13 +97,15 @@ class ArgumentAgent(CommunicatingAgent):
         performative = message.get_performative()
         decision, item, argument = message.get_content()
         
+        
         #Respond to propose
         if performative == MessagePerformative.PROPOSE:
-            self.not_proposed_items.remove(item.get_name())
+            #self.not_proposed_items.remove(item.get_name())
             #check if item in 10% top
             if self.preference.is_item_among_top_10_percent(item, self.list_of_items):
                 #ACCEPT
-                self.send_message(Message(self.get_name(), sender, MessagePerformative.ACCEPT, item))
+                content = True, item, ''
+                self.send_message(Message(self.get_name(), sender, MessagePerformative.ACCEPT, content))
             else:
                 #ASK_WHY
                 content = True, item, ''
@@ -78,7 +114,8 @@ class ArgumentAgent(CommunicatingAgent):
         #Respond to accept
         elif performative == MessagePerformative.ACCEPT:
             #COMMIT
-            self.send_message(Message(self.get_name(), sender, MessagePerformative.COMMIT, item))
+            content = True, item, ''
+            self.send_message(Message(self.get_name(), sender, MessagePerformative.COMMIT, content))
             self.commit_item.append(item)
             #########Sup item here or in model ??????
         
@@ -86,7 +123,8 @@ class ArgumentAgent(CommunicatingAgent):
         elif performative == MessagePerformative.COMMIT:
             if item not in self.commit_item:
                 #COMMIT
-                self.send_message(Message(self.get_name(), sender, MessagePerformative.COMMIT, item))
+                content = True, item, ''
+                self.send_message(Message(self.get_name(), sender, MessagePerformative.COMMIT, content))
                 self.commit_item.append(item)
         
         #Respond to ask_why
@@ -97,25 +135,119 @@ class ArgumentAgent(CommunicatingAgent):
                 new_item = self.preference.most_preferred([self.str_to_obj[item] for item in self.not_proposed_items])
                 new_item = True, new_item, ''
                 self.send_message(Message(self.get_name(), sender, MessagePerformative.PROPOSE, new_item))
-                self.not_proposed_items.remove(new_item.get_name())
+                #self.not_proposed_items.remove(new_item.get_name())
             else:
-                arg_why = new_argument.argument_why(item, self.preference) #arg_why = decision, item, argument
+                decision, item, args = new_argument.argument_why(item, self.preference) #arg_why = decision, item, argument
+                
+                arg = self.select_argument(args, self.used_arguments)
+                self.used_arguments.append(self.get_argument(arg) )
+                arg_why = decision, item, arg
                 self.send_message(Message(self.get_name(), sender, MessagePerformative.ARGUE, arg_why))
         
         #Respond to argue
         elif performative == MessagePerformative.ARGUE:
             if decision == True:
-                #ACCEPT
+
+                
                 new_argument = Argument(False, item)
                 if len(new_argument.List_attacking_proposal(item, self.preference)) == 0:
                     #take out item from list of not proposed items
                     self.send_message(Message(self.get_name(), sender, MessagePerformative.ACCEPT, item))
                 else:
+                    
+
                     adv_criterion = argument[0].get_criterion()
-                    arg_to_arg = new_argument.argument_to_argument(item, self.preference, adv_criterion)
-                    self.send_message(Message(self.get_name(), sender, MessagePerformative.ARGUE, arg_to_arg))
+                    
+                    
+                    if len(argument) == 1:
+                        adv_value = argument[0].get_value()
+                        
+                        
+
+                        
+                        my_value = self.preference.get_value(item, adv_criterion)
+                        
+                        passer = False
+
+                        for my_item in self.list_of_items:
+                            if my_item != item:
+                                value_my_item = self.preference.get_value(item, adv_criterion)
+                                if value_my_item.value > adv_value.value:
+                                    
+                                    my_argument = [CoupleValue(adv_criterion, value_my_item), str(value_my_item.name) + ' is better than ' + str(adv_value.name)]
+                                    my_message = True, my_item, my_argument
+                                    self.send_message(Message(self.get_name(), sender, MessagePerformative.ARGUE, my_message))
+                                    
+
+                                    passer = True
+
+                                    break
+                        
+                        if not passer and my_value.value <= 2:
+                                my_argument = [CoupleValue(adv_criterion, my_value), str(my_value.name) + ' is worst than ' + str(adv_value.name)]
+                                my_message = False, item, my_argument
+                                self.send_message(Message(self.get_name(), sender, MessagePerformative.ARGUE, my_message))
+                                
+
+                                passer = True
+
+                        if not passer:
+
+                            decision, item, args = new_argument.argument_to_argument(item, self.preference, adv_criterion)
+                            
+                            arg = self.select_argument(args, self.used_arguments)
+                            self.used_arguments.append(self.get_argument(arg) )
+                            
+                            arg_to_arg = decision, item, arg
+                            self.send_message(Message(self.get_name(), sender, MessagePerformative.ARGUE, arg_to_arg))
+                            
+
+
+                    elif len(argument) == 2:
+                        
+                        adv_value = argument[0].get_value()   
+
+                        passer = False
+
+                        for my_item in self.list_of_items:
+                            if my_item != item:
+                                value_my_item = self.preference.get_value(item, adv_criterion)
+                                if value_my_item.value > adv_value.value:
+                                    
+                                    my_argument = [CoupleValue(adv_criterion, value_my_item), str(value_my_item.name) + ' is better than ' + str(adv_value.name)]
+                                    my_message = True, my_item, my_argument
+                                    self.send_message(Message(self.get_name(), sender, MessagePerformative.ARGUE, my_message))
+
+                                    passer = True
+
+                                    break
+
+                        if not passer:
+
+                            
+
+
+
+                            decision, item, args = new_argument.argument_to_argument(item, self.preference, adv_criterion)
+                            arg = self.select_argument(args, self.used_arguments)
+
+                            if arg != None:
+                                self.used_arguments.append(self.get_argument(arg) )
+                                
+                                arg_to_arg = decision, item, arg
+                                self.send_message(Message(self.get_name(), sender, MessagePerformative.ARGUE, arg_to_arg))
+                            
+                            else:
+                                content = True, item, ''
+                                self.send_message(Message(self.get_name(), sender, MessagePerformative.ACCEPT, content))
+
+
+                                     
+
+
             else: 
                 new_argument = Argument(True, item)
+                
                 if len(new_argument.List_supporting_proposal(item, self.preference)) == 0:
                     if len(self.not_proposed_items) == 0 :
                         self.send_message(Message(self.get_name(), sender, MessagePerformative.ACCEPT, item))
@@ -123,12 +255,21 @@ class ArgumentAgent(CommunicatingAgent):
                         new_item = self.preference.most_preferred([self.str_to_obj[item] for item in self.not_proposed_items])
                         new_item = True, new_item, ''
                         self.send_message(Message(self.get_name(), sender, MessagePerformative.PROPOSE, new_item))
-                        self.not_proposed_items.remove(new_item.get_name())
+                        #self.not_proposed_items.remove(new_item.get_name())
                 else :    
                     adv_criterion = argument[0].get_criterion()
-                    arg_to_arg = new_argument.argument_to_argument(item, self.preference, adv_criterion)
+
+                    decision, item, args = new_argument.argument_to_argument(item, self.preference, adv_criterion)
+                    arg = self.select_argument(args, self.used_arguments)
+                    self.used_arguments.append(self.get_argument(arg) )
+                    
+                    arg_to_arg = decision, item, arg
+
                     self.send_message(Message(self.get_name(), sender, MessagePerformative.ARGUE, arg_to_arg))
                     
+
+
+
     def get_preference(self):
         return self.preference
     
@@ -193,7 +334,7 @@ class ArgumentModel(Model):
     """ArgumentModel which inherit from Model"""
     def __init__(self):
         super().__init__()
-        self.schedule = RandomActivation(self)
+        self.schedule = BaseScheduler(self)
         self.__messages_service = MessageService(self.schedule)
         self.running = True
         diesel_engine = Item("Diesel Engine", "A super cool diesel engine")
@@ -216,8 +357,7 @@ class ArgumentModel(Model):
             print(f'order of preferences for {agent_name} : \n', agent.get_preference().get_criterion_name_list())
 
             print(20*'-')
-            #print(agent.get_preference().most_preferred(self.list_of_items))
-            #print(20*'-')
+
             print(f"The prefered item for {agent_name} is: " , agent.get_preference().most_preferred(self.list_of_items).get_name())
             print(20*'=')
             self.schedule.add(agent)
@@ -243,5 +383,5 @@ class ArgumentModel(Model):
 
 if __name__ == "__main__":
     model = ArgumentModel()
-    for i in range(5):
+    for i in range(10):
         model.step()
