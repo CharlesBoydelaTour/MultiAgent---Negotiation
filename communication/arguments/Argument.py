@@ -54,9 +54,6 @@ class Argument:
 
         return list_supporting_proposals
 
-
-
-
     def List_attacking_proposal ( self , item , preferences ) :
         """ Generate a list of premisses which can be used to attack an item
             param item : Item - name of the item
