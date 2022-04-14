@@ -43,11 +43,12 @@ class ArgumentAgent(CommunicatingAgent):
         super().step()
         # read mailbox
         list_messages = self.get_new_messages()
-        if len(list_messages) == 0:
-            print ('on est là')
+        if len(list_messages) == 0 and len(self.used_arguments) == 0:
             if len(self.not_proposed_items)>0:
                 item = self.preference.most_preferred([self.str_to_obj[item] for item in self.not_proposed_items])
                 #self.not_proposed_items.remove(item.get_name())
+            
+            
             else :
                 self.not_proposed_items = [i.get_name() for i in self.list_of_items]
                 self.str_to_obj = {}
@@ -58,6 +59,7 @@ class ArgumentAgent(CommunicatingAgent):
 
                 item = self.preference.most_preferred([self.str_to_obj[item] for item in self.not_proposed_items])
                 #self.not_proposed_items.remove(item.get_name())
+            
             #select a random agent to porpose item (not self)
             dest = np.random.choice(self.model.schedule.agents)
             while dest.id == self.id:
@@ -66,12 +68,13 @@ class ArgumentAgent(CommunicatingAgent):
             item = True, item, ''
             self.send_message(Message(self.get_name(), dest.get_name(), MessagePerformative.PROPOSE, item))
         else:
-            print(len(list_messages))
+            #print(len(list_messages))
             for message in list_messages:
                 print(message)
                 #treat message
                 self.treat_message(message)
 
+    """
     def select_argument(self, arguments, used_arguments):
 
         result_to_use = None
@@ -81,15 +84,22 @@ class ArgumentAgent(CommunicatingAgent):
                 result_to_use = argument
                 break
         return result_to_use
+    """
+
+    def select_argument(self,item, arguments, used_arguments):
+
+        argument_to_use = None
+        for argument in arguments:
+            cr1 = self.get_argument(argument)            
+            if not( (item,cr1) in used_arguments):
+                argument_to_use = argument
+                break
+        return argument_to_use
+
 
     def get_argument(self, arg):
         cr1 = arg[0].get_criterion().name
-        val1 = arg[0].get_value().value
-        cr2 = ' '
-        if len(arg) > 1:
-            cr2 = arg[1].get_worst_criterion_name().name
-
-        return cr1, val1, cr2
+        return cr1, 
             
     def treat_message(self, message):
         #extract information from message
@@ -126,6 +136,7 @@ class ArgumentAgent(CommunicatingAgent):
                 content = True, item, ''
                 self.send_message(Message(self.get_name(), sender, MessagePerformative.COMMIT, content))
                 self.commit_item.append(item)
+            
         
         #Respond to ask_why
         elif performative == MessagePerformative.ASK_WHY:
@@ -139,10 +150,15 @@ class ArgumentAgent(CommunicatingAgent):
             else:
                 decision, item, args = new_argument.argument_why(item, self.preference) #arg_why = decision, item, argument
                 
-                arg = self.select_argument(args, self.used_arguments)
-                self.used_arguments.append(self.get_argument(arg) )
-                arg_why = decision, item, arg
-                self.send_message(Message(self.get_name(), sender, MessagePerformative.ARGUE, arg_why))
+                arg = self.select_argument(item, args, self.used_arguments)
+
+                if arg != None:
+                    self.used_arguments.append((item, self.get_argument(arg)) )
+                    arg_why = decision, item, arg
+                    self.send_message(Message(self.get_name(), sender, MessagePerformative.ARGUE, arg_why))
+                else:
+                        content = True, item, ''
+                        self.send_message(Message(self.get_name(), sender, MessagePerformative.ACCEPT, content))
         
         #Respond to argue
         elif performative == MessagePerformative.ARGUE:
@@ -195,12 +211,16 @@ class ArgumentAgent(CommunicatingAgent):
 
                             decision, item, args = new_argument.argument_to_argument(item, self.preference, adv_criterion)
                             
-                            arg = self.select_argument(args, self.used_arguments)
-                            self.used_arguments.append(self.get_argument(arg) )
-                            
-                            arg_to_arg = decision, item, arg
-                            self.send_message(Message(self.get_name(), sender, MessagePerformative.ARGUE, arg_to_arg))
-                            
+                            arg = self.select_argument(item, args, self.used_arguments)
+
+                            if arg != None:
+                                self.used_arguments.append((item, self.get_argument(arg)) )
+
+                                arg_to_arg = decision, item, arg
+                                self.send_message(Message(self.get_name(), sender, MessagePerformative.ARGUE, arg_to_arg))
+                            else:
+                                content = True, item, ''
+                                self.send_message(Message(self.get_name(), sender, MessagePerformative.ACCEPT, content))
 
 
                     elif len(argument) == 2:
@@ -229,10 +249,10 @@ class ArgumentAgent(CommunicatingAgent):
 
 
                             decision, item, args = new_argument.argument_to_argument(item, self.preference, adv_criterion)
-                            arg = self.select_argument(args, self.used_arguments)
+                            arg = self.select_argument(item, args, self.used_arguments)
 
                             if arg != None:
-                                self.used_arguments.append(self.get_argument(arg) )
+                                self.used_arguments.append((item, self.get_argument(arg)) )
                                 
                                 arg_to_arg = decision, item, arg
                                 self.send_message(Message(self.get_name(), sender, MessagePerformative.ARGUE, arg_to_arg))
@@ -250,7 +270,7 @@ class ArgumentAgent(CommunicatingAgent):
                 
                 if len(new_argument.List_supporting_proposal(item, self.preference)) == 0:
                     if len(self.not_proposed_items) == 0 :
-                        self.send_message(Message(self.get_name(), sender, MessagePerformative.ACCEPT, item))
+                        self.send_message(Message(self.get_name(), sender, MessagePerformative.ACCEPT, item)) ##### on accept pas cet item
                     else: 
                         new_item = self.preference.most_preferred([self.str_to_obj[item] for item in self.not_proposed_items])
                         new_item = True, new_item, ''
@@ -260,12 +280,18 @@ class ArgumentAgent(CommunicatingAgent):
                     adv_criterion = argument[0].get_criterion()
 
                     decision, item, args = new_argument.argument_to_argument(item, self.preference, adv_criterion)
-                    arg = self.select_argument(args, self.used_arguments)
-                    self.used_arguments.append(self.get_argument(arg) )
-                    
-                    arg_to_arg = decision, item, arg
+                    arg = self.select_argument(item, args, self.used_arguments)
 
-                    self.send_message(Message(self.get_name(), sender, MessagePerformative.ARGUE, arg_to_arg))
+                    if arg != None:
+                        self.used_arguments.append((item, self.get_argument(arg)) )
+                    
+                        arg_to_arg = decision, item, arg
+
+                        self.send_message(Message(self.get_name(), sender, MessagePerformative.ARGUE, arg_to_arg))
+
+                    else:
+                                content = True, item, ''
+                                self.send_message(Message(self.get_name(), sender, MessagePerformative.ACCEPT, content))
                     
 
 
