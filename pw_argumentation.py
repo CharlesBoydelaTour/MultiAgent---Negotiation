@@ -1,6 +1,7 @@
 from mesa import Model
 from mesa.time import RandomActivation, BaseScheduler
 import numpy as np
+from sqlalchemy import true
 from communication.agent.CommunicatingAgent import CommunicatingAgent
 from communication.message.MessageService import MessageService
 from communication.preferences.CriterionName import CriterionName
@@ -13,7 +14,7 @@ from communication.message.MessagePerformative import MessagePerformative
 from communication.arguments.Argument import Argument
 from communication.mailbox.Mailbox import Mailbox
 from communication.arguments.CoupleValue import CoupleValue
-
+import random
 
 
 
@@ -27,7 +28,6 @@ class ArgumentAgent(CommunicatingAgent):
         #self.list_of_items_object = self.model.list_of_items
         #self.list_of_items = [i.get_name() for i in self.model.list_of_items]
         self.list_of_items = self.model.list_of_items
-        print(self.list_of_items)
         self.profile = model.profiles[unique_id]
         #self.preference = self.generate_manual_preferences(self.list_of_items, self.profile)
         self.preference = self.generate_random_preference(self.list_of_items)
@@ -41,6 +41,7 @@ class ArgumentAgent(CommunicatingAgent):
                 if object.get_name() == i:
                     self.str_to_obj[i] = object
         self.start = start
+        self.end_status = False
         
     def step(self):
         super().step()
@@ -51,20 +52,19 @@ class ArgumentAgent(CommunicatingAgent):
             item = self.preference.most_preferred([self.str_to_obj[item] for item in self.not_proposed_items])
             self.not_proposed_items.remove(item.get_name())
             #select a random agent to porpose item (not self)
-            dest = np.random.choice(self.model.schedule.agents)
-            while dest.id == self.id:
-                dest = np.random.choice(self.model.schedule.agents)
+            dest_id = self.id+1
+            dest = self.model.schedule.agents[dest_id]
             #print(self.model.schedule.agents)
             item = True, item, ''
             self.send_message(Message(self.get_name(), dest.get_name(), MessagePerformative.PROPOSE, item))
             self.start = False
         else:
-            #print(len(list_messages))
+            if len(list_messages)==0:
+                 self.end_status=True
             for message in list_messages:
                 print(message)
                 #treat message
                 self.treat_message(message)
-        
 
     """
     def select_argument(self, arguments, used_arguments):
@@ -279,9 +279,7 @@ class ArgumentAgent(CommunicatingAgent):
                     adv_criterion = argument[0].get_criterion()
 
                     decision, item, args = new_argument.argument_to_argument(item, self.preference, adv_criterion)
-                    print(args)
                     arg = self.select_argument(item, args, self.used_arguments)
-                    print(arg)
                     if arg != None:
                         self.used_arguments.append((item, self.get_argument(arg)) )
                     
@@ -313,21 +311,30 @@ class ArgumentAgent(CommunicatingAgent):
     def generate_random_preference(self, list_of_items):
         """give a score for each item for each agent""" 
         preference = Preferences()
-        preference.set_criterion_name_list([CriterionName.PRODUCTION_COST, CriterionName.ENVIRONMENT_IMPACT,
+        #
+        item_values = self.model.item_values
+        list_criterion = [CriterionName.PRODUCTION_COST, CriterionName.ENVIRONMENT_IMPACT,
                                        CriterionName.CONSUMPTION, CriterionName.DURABILITY,
-                                       CriterionName.NOISE])
+                                       CriterionName.NOISE]
+        #randomised list_criterion order
+        list_criterion = random.sample(list_criterion, len(list_criterion))
+        #print(list_criterion)
+        preference.set_criterion_name_list(list_criterion)
+        
         values = {0: Value.VERY_BAD, 1: Value.BAD, 2: Value.AVERAGE, 3: Value.GOOD, 4: Value.VERY_GOOD}
+        i=0
         for item in list_of_items:
            preference.add_criterion_value(CriterionValue(item, CriterionName.PRODUCTION_COST,
-                                                         values[np.random.randint(0, 5)]))                                             
+                                                         values[item_values[i][0]]))                                             
            preference.add_criterion_value(CriterionValue(item, CriterionName.CONSUMPTION,
-                                                         values[np.random.randint(0, 5)]))
+                                                         values[item_values[i][1]]))
            preference.add_criterion_value(CriterionValue(item, CriterionName.DURABILITY,
-                                                         values[np.random.randint(0, 5)]))
+                                                         values[item_values[i][2]]))
            preference.add_criterion_value(CriterionValue(item, CriterionName.ENVIRONMENT_IMPACT,
-                                                         values[np.random.randint(0, 5)]))
+                                                         values[item_values[i][3]]))
            preference.add_criterion_value(CriterionValue(item, CriterionName.NOISE,
-                                                         values[np.random.randint(0, 5)]))
+                                                      values[item_values[i][4]]))
+           i=i+1
         return preference
 
     def generate_manual_preferences(self, list_of_items, profiles ):
@@ -369,24 +376,26 @@ class ArgumentAgent(CommunicatingAgent):
 
 class ArgumentModel(Model):
     """ArgumentModel which inherit from Model"""
-    def __init__(self):
+    def __init__(self, profiles):
         super().__init__()
         self.schedule = BaseScheduler(self)
         self.__messages_service = MessageService(self.schedule)
         self.running = True
         diesel_engine = Item("Diesel Engine", "A super cool diesel engine")
         electric_engine = Item("Electric Engine", "A very quiet engine")
+        steam_engine = Item("Steam Engine", "A steam-punk engine")
+        self.profiles = profiles
 
-        self.profiles = [[[0,3,1,2,4],[4, 3, 4, 1, 2],[2, 1, 3, 4, 4]],
-                            [[3,4,0,1,2],[3, 2, 3, 1, 1],[3, 2, 2, 4, 4]]]
-
-        self.list_of_items = [diesel_engine, electric_engine]
+        self.list_of_items = [diesel_engine, electric_engine, steam_engine]
+        self.item_values = self.generate_item_values()
         self.list_of_agents = []
+        
+        #### multi agent generation ####
         for i in range(2):
             print(80*'=')
             agent_name = "agent_" + str(i)
             if i % 2 == 0 :
-                agent = ArgumentAgent(i, self, agent_name, True)
+                agent = ArgumentAgent(i, self, agent_name, True) 
             else:
                 agent = ArgumentAgent(i, self, agent_name, False)
             # print(agent_name)
@@ -403,11 +412,20 @@ class ArgumentModel(Model):
             # print(20*'=')
             self.schedule.add(agent)
             self.list_of_agents.append(agent)
-            
+        
+    def generate_item_values(self):
+        #generate a list of 5 item values for each item
+        item_values = []
+        for item in self.list_of_items:
+            item_values.append([random.randint(1,4) for i in range(5)])
+        return item_values
+    
     def step(self):
         """step of the model"""
         self.__messages_service.dispatch_messages()
         self.schedule.step()
+        return [agent.end_status for agent in self.list_of_agents]
+
             
     def __str__(self, arg):
         
@@ -420,9 +438,55 @@ class ArgumentModel(Model):
             str += element.__str__() + ',  '
         return str
             
-
+def one_game():
+    
+    status = [False]
+    agent0_profile = [[0,3,1,2,4],[4, 3, 4, 1, 2],[2, 1, 3, 4, 4]]
+    agent1_profile = [[3,4,0,1,2],[3, 2, 3, 1, 1],[3, 2, 2, 4, 4]]
+    player_list = [agent0_profile,agent1_profile]
+    #shuffle player list to randomize the order of players
+    starting_agent, next_agent = random.sample(player_list, 2) 
+    model = ArgumentModel(profiles=[starting_agent, next_agent])
+    while True not in status:
+        status = model.step()
+    chosen_object = model.list_of_agents[0].commit_item[0]
+    winning_agent = find_winning_agent(model)
+    list_of_items = [i.get_name() for i in winning_agent.list_of_items]
+    proposed_winning_items = []
+    for item in list_of_items:
+        if item not in winning_agent.not_proposed_items:
+            proposed_winning_items.append(item)
+    used_arguments = winning_agent.used_arguments
+        
+    return chosen_object, winning_agent, proposed_winning_items, used_arguments
+    
+    
+def find_winning_agent(model):
+    chosen_object = model.list_of_agents[0].commit_item[0]
+    winning_value = 0
+    for agent in model.list_of_agents:
+        object_value = chosen_object.get_score(agent.get_preference())
+        if object_value > winning_value:
+            winning_value = object_value
+            winning_agent = agent
+    return winning_agent
+    
+def find_list_of_arguments(model):
+    list_of_arguments = []
+    for agent in model.list_of_agents:
+        list_of_arguments.append(agent.used_arguments)
+    
 
 if __name__ == "__main__":
-    model = ArgumentModel()
-    for i in range(10):
-        model.step()
+    # for i in range(1):
+    #     model = ArgumentModel()
+    #     status = [False]
+    #     #while True not in status:
+    #     for i in range(10):
+    #         status = model.step()
+    #     #reset mesa model 
+    chosen_object, winning_agent, proposed_winning_items, used_arguments = one_game()
+    print(chosen_object.get_name())
+    print(winning_agent.id)
+    print(proposed_winning_items)
+    print(used_arguments)
