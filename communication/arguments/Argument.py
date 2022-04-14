@@ -45,7 +45,7 @@ class Argument:
 
         for i, criterion_name in enumerate(pref_ordered):
             value = preferences.get_value(item, criterion_name)
-            #print(value.value)
+
             if value.value >=3:
                 list_supporting_proposals.append(criterion_name)
                 self.add_premiss_couple_values(criterion_name, value)
@@ -55,35 +55,6 @@ class Argument:
         return list_supporting_proposals
 
 
-                    #print(self.__comparison_list[-1].get_best_criterion_name())
-                #print(20*'-'+'\n',self.__couple_values_list[-1].get_criterion(), '\n'+20*'-')
-                #criterion_name = self.__couple_values_list[-1].get_criterion()
-                #value = self.__couple_values_list[-1].get_value()
-                #print(self.__couple_values_list[-1].__str__())
-                
-                #premisse = (criterion_name, value)
-                #print(self.__couple_values_list)
-                #print(criterion_name)
-                
-                #print(list_supporting_proposals)
-        """        
-        print(30*'#')
-        print(list_supporting_proposals)
-        print__comparison_list = []
-        print__couple_values_list = []
-        for comparison in self.__comparison_list:
-            #print(comparison.get_best_criterion_name())
-            print__comparison_list.append((comparison.get_best_criterion_name(),comparison.get_worst_criterion_name()))
-        print(30*'#')
-        print(print__comparison_list)
-
-        for couple_val in self.__couple_values_list:
-            print__couple_values_list.append((couple_val.get_criterion(),couple_val.get_value()))            
-        
-        print(30*'#')
-        print(print__couple_values_list)
-        """
-        #return list_supporting_proposals
 
 
     def List_attacking_proposal ( self , item , preferences ) :
@@ -115,21 +86,16 @@ class Argument:
             return : string - the strongest supportive argument
         """
         argument =[]
-       
-        #print(item.get_name())
-        #crit_name = self.List_supporting_proposal(item , preferences)[0]
-        #value = self.List_supporting_proposal(item , preferences)[1]
+        arguments =[]
+
         self.List_supporting_proposal(item , preferences)
-        argument.append(self.__couple_values_list[0])
+        for argument in self.__couple_values_list:
+            arguments.append([argument])
 
 
+        return self.__decision, item, arguments
 
-        #print(argument)
-        #argument.__str__()
-        #print(argument.__str__())
-        #message = f"{item.get_name()} <= {argument.__str__()}"
 
-        return self.__decision, item, argument
 
 
     def argument_to_argument ( self , item, preferences, criterion_recu  ) :
@@ -137,21 +103,39 @@ class Argument:
         ...
 
         """
-        argument =[]
-        if not self.__decision:        
+        
+        
+        if not self.__decision:  
+            arguments =[]      
 
             list_attacking_proposals = self.List_attacking_proposal(item , preferences)
-            if len(list_attacking_proposals) >= 1:
-                for i, criterion in enumerate(list_attacking_proposals):
-                    if preferences.is_preferred_criterion(criterion_name_1 = criterion, criterion_name_2 = criterion_recu):
-                        
-                        argument.append(Comparison(criterion, criterion_recu))
-                        argument.append(self.__couple_values_list[i])
-                        break
-            else:
-                print('accept pour le moment')
+            for i, criterion in enumerate(list_attacking_proposals):
+                argument =[]
+                if preferences.is_preferred_criterion(criterion_name_1 = criterion, criterion_name_2 = criterion_recu):
+                    
+                    argument.append(self.__couple_values_list[i])
+                    argument.append(Comparison(criterion, criterion_recu))
+                    
+                    arguments.append(argument)
+        
 
-            return self.__decision, item, argument
+            return self.__decision, item, arguments
+
+
 
         else:
+            arguments =[]
             
+            List_supporting_proposal = self.List_supporting_proposal(item , preferences)
+     
+            for i, criterion in enumerate(List_supporting_proposal):
+                argument =[]
+                if preferences.is_preferred_criterion(criterion_name_1 = criterion, criterion_name_2 = criterion_recu):
+                    
+                    argument.append(self.__couple_values_list[i])
+                    argument.append(Comparison(criterion, criterion_recu))     
+                    
+                    arguments.append(argument)
+
+
+            return self.__decision, item, arguments
