@@ -19,7 +19,7 @@ from communication.arguments.CoupleValue import CoupleValue
 
 class ArgumentAgent(CommunicatingAgent):
     """ ArgumentAgent which inherit from CommunicatingAgent."""
-    def __init__(self, unique_id, model, name):
+    def __init__(self, unique_id, model, name, start):
         super().__init__(unique_id, model, name)
         self.id = unique_id
         self.name = name
@@ -29,37 +29,27 @@ class ArgumentAgent(CommunicatingAgent):
         self.list_of_items = self.model.list_of_items
         print(self.list_of_items)
         self.profile = model.profiles[unique_id]
-        self.preference = self.generate_manual_preferences(self.list_of_items, self.profile)
+        #self.preference = self.generate_manual_preferences(self.list_of_items, self.profile)
+        self.preference = self.generate_random_preference(self.list_of_items)
         self.commit_item =[]
         self.not_proposed_items = [i.get_name() for i in self.list_of_items]
+        self.proposed_items = []
         self.used_arguments = []
         self.str_to_obj = {}
         for i in self.not_proposed_items:
             for object in self.list_of_items:
                 if object.get_name() == i:
                     self.str_to_obj[i] = object
+        self.start = start
         
     def step(self):
         super().step()
         # read mailbox
         list_messages = self.get_new_messages()
-        if len(list_messages) == 0 and len(self.used_arguments) == 0:
-            if len(self.not_proposed_items)>0:
-                item = self.preference.most_preferred([self.str_to_obj[item] for item in self.not_proposed_items])
-                #self.not_proposed_items.remove(item.get_name())
-            
-            
-            else :
-                self.not_proposed_items = [i.get_name() for i in self.list_of_items]
-                self.str_to_obj = {}
-                for i in self.not_proposed_items:
-                    for object in self.list_of_items:
-                        if object.get_name() == i:
-                            self.str_to_obj[i] = object
-
-                item = self.preference.most_preferred([self.str_to_obj[item] for item in self.not_proposed_items])
-                #self.not_proposed_items.remove(item.get_name())
-            
+        
+        if self.start == True:
+            item = self.preference.most_preferred([self.str_to_obj[item] for item in self.not_proposed_items])
+            self.not_proposed_items.remove(item.get_name())
             #select a random agent to porpose item (not self)
             dest = np.random.choice(self.model.schedule.agents)
             while dest.id == self.id:
@@ -67,12 +57,14 @@ class ArgumentAgent(CommunicatingAgent):
             #print(self.model.schedule.agents)
             item = True, item, ''
             self.send_message(Message(self.get_name(), dest.get_name(), MessagePerformative.PROPOSE, item))
+            self.start = False
         else:
             #print(len(list_messages))
             for message in list_messages:
                 print(message)
                 #treat message
                 self.treat_message(message)
+        
 
     """
     def select_argument(self, arguments, used_arguments):
@@ -86,8 +78,8 @@ class ArgumentAgent(CommunicatingAgent):
         return result_to_use
     """
 
+    
     def select_argument(self,item, arguments, used_arguments):
-
         argument_to_use = None
         for argument in arguments:
             cr1 = self.get_argument(argument)            
@@ -99,7 +91,9 @@ class ArgumentAgent(CommunicatingAgent):
 
     def get_argument(self, arg):
         cr1 = arg[0].get_criterion().name
+        val1 = arg[0].get_value()
         return cr1, 
+                 
             
     def treat_message(self, message):
         #extract information from message
@@ -107,10 +101,11 @@ class ArgumentAgent(CommunicatingAgent):
         performative = message.get_performative()
         decision, item, argument = message.get_content()
         
-        
+    
         #Respond to propose
         if performative == MessagePerformative.PROPOSE:
-            #self.not_proposed_items.remove(item.get_name())
+            self.not_proposed_items.remove(item.get_name())
+            self.proposed_items.append(item.get_name())
             #check if item in 10% top
             if self.preference.is_item_among_top_10_percent(item, self.list_of_items):
                 #ACCEPT
@@ -127,7 +122,6 @@ class ArgumentAgent(CommunicatingAgent):
             content = True, item, ''
             self.send_message(Message(self.get_name(), sender, MessagePerformative.COMMIT, content))
             self.commit_item.append(item)
-            #########Sup item here or in model ??????
         
         #Respond to commit
         elif performative == MessagePerformative.COMMIT:
@@ -144,9 +138,9 @@ class ArgumentAgent(CommunicatingAgent):
             if len(new_argument.List_supporting_proposal(item, self.preference)) == 0:
                 #take out item from list of not proposed items
                 new_item = self.preference.most_preferred([self.str_to_obj[item] for item in self.not_proposed_items])
+                self.not_proposed_items.remove(new_item.get_name())
                 new_item = True, new_item, ''
                 self.send_message(Message(self.get_name(), sender, MessagePerformative.PROPOSE, new_item))
-                #self.not_proposed_items.remove(new_item.get_name())
             else:
                 decision, item, args = new_argument.argument_why(item, self.preference) #arg_why = decision, item, argument
                 
@@ -270,18 +264,24 @@ class ArgumentAgent(CommunicatingAgent):
                 
                 if len(new_argument.List_supporting_proposal(item, self.preference)) == 0:
                     if len(self.not_proposed_items) == 0 :
-                        self.send_message(Message(self.get_name(), sender, MessagePerformative.ACCEPT, item)) ##### on accept pas cet item
-                    else: 
-                        new_item = self.preference.most_preferred([self.str_to_obj[item] for item in self.not_proposed_items])
+                        #take an item proposed by the other agent
+                        new_item = self.preference.most_preferred([self.str_to_obj[item] for item in self.proposed_items])
+                        self.not_proposed_items.remove(new_item.get_name())
                         new_item = True, new_item, ''
                         self.send_message(Message(self.get_name(), sender, MessagePerformative.PROPOSE, new_item))
-                        #self.not_proposed_items.remove(new_item.get_name())
+                    else: 
+                        #take an item not already proposed
+                        new_item = self.preference.most_preferred([self.str_to_obj[item] for item in self.not_proposed_items])
+                        self.not_proposed_items.remove(new_item.get_name())
+                        new_item = True, new_item, ''
+                        self.send_message(Message(self.get_name(), sender, MessagePerformative.PROPOSE, new_item))
                 else :    
                     adv_criterion = argument[0].get_criterion()
 
                     decision, item, args = new_argument.argument_to_argument(item, self.preference, adv_criterion)
+                    print(args)
                     arg = self.select_argument(item, args, self.used_arguments)
-
+                    print(arg)
                     if arg != None:
                         self.used_arguments.append((item, self.get_argument(arg)) )
                     
@@ -290,8 +290,18 @@ class ArgumentAgent(CommunicatingAgent):
                         self.send_message(Message(self.get_name(), sender, MessagePerformative.ARGUE, arg_to_arg))
 
                     else:
-                                content = True, item, ''
-                                self.send_message(Message(self.get_name(), sender, MessagePerformative.ACCEPT, content))
+                        if len(self.not_proposed_items) == 0 :
+                            #take an item proposed by the other agent
+                            new_item = self.preference.most_preferred([self.str_to_obj[item] for item in self.proposed_items])
+                            self.not_proposed_items.remove(new_item.get_name())
+                            new_item = True, new_item, ''
+                            self.send_message(Message(self.get_name(), sender, MessagePerformative.PROPOSE, new_item))
+                        else: 
+                            #take an item not already proposed
+                            new_item = self.preference.most_preferred([self.str_to_obj[item] for item in self.not_proposed_items])
+                            self.not_proposed_items.remove(new_item.get_name())
+                            new_item = True, new_item, ''
+                            self.send_message(Message(self.get_name(), sender, MessagePerformative.PROPOSE, new_item))
                     
 
 
@@ -300,30 +310,30 @@ class ArgumentAgent(CommunicatingAgent):
         return self.preference
     
     
-    #def generate_random_preference(self, list_of_items):
-    #    """give a score for each item for each agent""" 
-    #    self.preference = Preferences()
-    #    self.preference.set_criterion_name_list([CriterionName.PRODUCTION_COST, CriterionName.ENVIRONMENT_IMPACT,
-    #                                    CriterionName.CONSUMPTION, CriterionName.DURABILITY,
-    #                                    CriterionName.NOISE])
-    #    values = {0: Value.VERY_BAD, 1: Value.BAD, 2: Value.AVERAGE, 3: Value.GOOD, 4: Value.VERY_GOOD}
-    #    for item in list_of_items:
-    #        self.preference.add_criterion_value(CriterionValue(item, CriterionName.PRODUCTION_COST,
-    #                                                      values[np.random.randint(0, 5)]))
-    #        print(values[np.random.randint(0, 5)])                                              
-    #        self.preference.add_criterion_value(CriterionValue(item, CriterionName.CONSUMPTION,
-    #                                                      values[np.random.randint(0, 5)]))
-    #        self.preference.add_criterion_value(CriterionValue(item, CriterionName.DURABILITY,
-    #                                                      values[np.random.randint(0, 5)]))
-    #        self.preference.add_criterion_value(CriterionValue(item, CriterionName.ENVIRONMENT_IMPACT,
-    #                                                      values[np.random.randint(0, 5)]))
-    #        self.preference.add_criterion_value(CriterionValue(item, CriterionName.NOISE,
-    #                                                      values[np.random.randint(0, 5)]))
+    def generate_random_preference(self, list_of_items):
+        """give a score for each item for each agent""" 
+        preference = Preferences()
+        preference.set_criterion_name_list([CriterionName.PRODUCTION_COST, CriterionName.ENVIRONMENT_IMPACT,
+                                       CriterionName.CONSUMPTION, CriterionName.DURABILITY,
+                                       CriterionName.NOISE])
+        values = {0: Value.VERY_BAD, 1: Value.BAD, 2: Value.AVERAGE, 3: Value.GOOD, 4: Value.VERY_GOOD}
+        for item in list_of_items:
+           preference.add_criterion_value(CriterionValue(item, CriterionName.PRODUCTION_COST,
+                                                         values[np.random.randint(0, 5)]))                                             
+           preference.add_criterion_value(CriterionValue(item, CriterionName.CONSUMPTION,
+                                                         values[np.random.randint(0, 5)]))
+           preference.add_criterion_value(CriterionValue(item, CriterionName.DURABILITY,
+                                                         values[np.random.randint(0, 5)]))
+           preference.add_criterion_value(CriterionValue(item, CriterionName.ENVIRONMENT_IMPACT,
+                                                         values[np.random.randint(0, 5)]))
+           preference.add_criterion_value(CriterionValue(item, CriterionName.NOISE,
+                                                         values[np.random.randint(0, 5)]))
+        return preference
 
     def generate_manual_preferences(self, list_of_items, profiles ):
         # To be completed
         """give a score for each item for each agent""" 
-        self.preference = Preferences()
+        preference = Preferences()
 
         values = {1: Value.VERY_BAD, 2: Value.BAD, 3: Value.GOOD, 4: Value.VERY_GOOD}
         criterions = {0: CriterionName.PRODUCTION_COST, 1: CriterionName.CONSUMPTION, 
@@ -334,7 +344,7 @@ class ArgumentAgent(CommunicatingAgent):
         for i in profiles[0]:
             criterion_name_list.append(criterions[i])
         
-        self.preference.set_criterion_name_list(criterion_name_list)
+        preference.set_criterion_name_list(criterion_name_list)
         
         for item in list_of_items:
 
@@ -343,16 +353,17 @@ class ArgumentAgent(CommunicatingAgent):
             elif str(item) == "Electric Engine (A very quiet engine)":
                 profile = profiles[2]
             
-            self.preference.add_criterion_value(CriterionValue(item, CriterionName.PRODUCTION_COST,
+            preference.add_criterion_value(CriterionValue(item, CriterionName.PRODUCTION_COST,
                                                       values[profile[0]]))
-            self.preference.add_criterion_value(CriterionValue(item, CriterionName.CONSUMPTION,
+            preference.add_criterion_value(CriterionValue(item, CriterionName.CONSUMPTION,
                                                       values[profile[1]]))
-            self.preference.add_criterion_value(CriterionValue(item, CriterionName.DURABILITY,
+            preference.add_criterion_value(CriterionValue(item, CriterionName.DURABILITY,
                                                       values[profile[2]]))
-            self.preference.add_criterion_value(CriterionValue(item, CriterionName.ENVIRONMENT_IMPACT,
+            preference.add_criterion_value(CriterionValue(item, CriterionName.ENVIRONMENT_IMPACT,
                                                       values[profile[3]]))
-            self.preference.add_criterion_value(CriterionValue(item, CriterionName.NOISE,
+            preference.add_criterion_value(CriterionValue(item, CriterionName.NOISE,
                                                           values[profile[4]]))
+            return preference
         
 
 
@@ -374,18 +385,22 @@ class ArgumentModel(Model):
         for i in range(2):
             print(80*'=')
             agent_name = "agent_" + str(i)
-            agent = ArgumentAgent(i, self, agent_name )
-            print(agent_name)
+            if i % 2 == 0 :
+                agent = ArgumentAgent(i, self, agent_name, True)
+            else:
+                agent = ArgumentAgent(i, self, agent_name, False)
+            # print(agent_name)
             
-            print(80*'=')
-            agent.generate_manual_preferences(self.list_of_items, self.profiles[i])
+            # print(80*'=')
+            # agent.generate_random_preference(self.list_of_items)
+            # #agent.generate_manual_preferences(self.list_of_items, self.profiles[i])
             
-            print(f'order of preferences for {agent_name} : \n', agent.get_preference().get_criterion_name_list())
+            # print(f'order of preferences for {agent_name} : \n', agent.get_preference().get_criterion_name_list())
 
-            print(20*'-')
+            # print(20*'-')
 
-            print(f"The prefered item for {agent_name} is: " , agent.get_preference().most_preferred(self.list_of_items).get_name())
-            print(20*'=')
+            # print(f"The prefered item for {agent_name} is: " , agent.get_preference().most_preferred(self.list_of_items).get_name())
+            # print(20*'=')
             self.schedule.add(agent)
             self.list_of_agents.append(agent)
             
