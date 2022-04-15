@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+from communication.message.MessagePerformative import MessagePerformative
 
 class Message:
     """Message class.
@@ -25,7 +26,7 @@ class Message:
         """ Return Message as a String.
         """
         return "From " + str(self.__from_agent) + " to " + str(self.__to_agent) \
-               + " (" + str(self.__message_performative) + ") " + str(self.__content)
+               + " (" + str(self.__message_performative) + ") " + self._strcontent_(self.__content)
 
     def get_exp(self):
         """ Return the sender of the message.
@@ -46,3 +47,31 @@ class Message:
         """ Return the content of the message.
         """
         return self.__content
+    
+
+    def _strcontent_(self, arg):
+        
+        decision, item, argument = arg
+        
+        if decision:
+                
+            if self.__message_performative == MessagePerformative.PROPOSE:
+            
+                str = f"\t{item}\t"
+            
+            elif self.__message_performative == MessagePerformative.ASK_WHY:
+                str = f"\tWHY {item.get_name()}  ?\t"
+        
+            else:
+                str = f"\t{item.get_name()}\t"
+
+        else:
+            str = f"\tnot {item.get_name()}"
+        
+        if len(argument) > 0:
+            str += '\t<=\t'
+
+            for element in argument:
+                str += element.__str__() + ',  '
+
+        return str

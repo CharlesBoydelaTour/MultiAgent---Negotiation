@@ -22,6 +22,7 @@ class MessageService:
     def __init__(self, scheduler, instant_delivery=True):
         """ Create a new MessageService object.
         """
+        MessageService.__instance = None
         if MessageService.__instance is not None:
             raise Exception("This class is a singleton!")
         else:
