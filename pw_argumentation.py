@@ -66,15 +66,20 @@ class ArgumentAgent(CommunicatingAgent):
                 print(list_messages[0])
                 self.treat_message(list_messages[0])
             elif len(list_messages)==2:
-                
+             ####################################quelques ameliorations###################   
                 for message in list_messages:
                     performative = message.get_performative()
                     if performative == MessagePerformative.PROPOSE:
                         print(message)
+                        decision, item, argument = message.get_content()
+                        self.not_proposed_items.remove(item.get_name())
+                        self.proposed_items.append(item.get_name())
+                        
                     elif performative == MessagePerformative.ARGUE:
                         print(message)
                         #treat message
                         self.treat_message(message)
+              ###############################################################################
 
     """
     def select_argument(self, arguments, used_arguments):
@@ -204,6 +209,7 @@ class ArgumentAgent(CommunicatingAgent):
                                 value_my_item = self.preference.get_value(my_item, adv_criterion)
                                 if value_my_item.value > adv_value.value:
 
+                                    self.not_proposed_items.remove(my_item.get_name()) ########################################
                                     new_item = True, my_item, ''
                                     self.send_message(Message(self.get_name(), sender, MessagePerformative.PROPOSE, new_item))
                                     my_argument = [CoupleValue(adv_criterion, value_my_item)]
@@ -271,6 +277,7 @@ class ArgumentAgent(CommunicatingAgent):
                             if my_item != item:
                                 value_my_item = self.preference.get_value(my_item, adv_criterion)
                                 if value_my_item.value > adv_value.value:
+                                    self.not_proposed_items.remove(my_item.get_name()) #####################################
                                     new_item = True, my_item, ''
                                     self.send_message(Message(self.get_name(), sender, MessagePerformative.PROPOSE, new_item))
                                     my_argument = [CoupleValue(adv_criterion, value_my_item)]
