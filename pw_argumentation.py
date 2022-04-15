@@ -242,7 +242,7 @@ class ArgumentAgent(CommunicatingAgent):
 
                                     break
                         
-                        if not passer and my_value.value <= 1:
+                        if not passer and my_value.value <= 2:
                                 #my_argument = [CoupleValue(adv_criterion, my_value), str(my_value.name) + ' is worst than ' + str(adv_value.name)]
                                 my_argument = [CoupleValue(adv_criterion, my_value)]
                                 my_message = False, item, my_argument
@@ -472,7 +472,6 @@ class ArgumentAgent(CommunicatingAgent):
             preference.add_criterion_value(CriterionValue(item, CriterionName.NOISE,
                                                           values[profile[4]]))
             
-            #print(values[profile[4]])
         return preference
         
 
@@ -502,18 +501,7 @@ class ArgumentModel(Model):
                 agent = ArgumentAgent(i, self, agent_name, True) 
             else:
                 agent = ArgumentAgent(i, self, agent_name, False)
-            # print(agent_name)
-            
-            # print(80*'=')
-            # agent.generate_random_preference(self.list_of_items)
-            # #agent.generate_manual_preferences(self.list_of_items, self.profiles[i])
-            
-            # print(f'order of preferences for {agent_name} : \n', agent.get_preference().get_criterion_name_list())
 
-            # print(20*'-')
-
-            # print(f"The prefered item for {agent_name} is: " , agent.get_preference().most_preferred(self.list_of_items).get_name())
-            # print(20*'=')
             self.schedule.add(agent)
             self.list_of_agents.append(agent)
         
@@ -599,25 +587,30 @@ def counter_item_type(items):
             counter[item.get_name()] = 1
     return counter
 
+def counter_criterion_type(arguments):
+    """count the number of criterion"""
+    counter = {}
+    for argument in arguments:
+        if argument != []:
+            if argument[0][1][0] in counter:
+                counter[argument[0][1][0]] += 1
+            else:
+                counter[argument[0][1][0]] = 1
+    return counter
+
 if __name__ == "__main__":
-    # for i in range(1):
-    #     model = ArgumentModel()
-    #     status = [False]
-    #     #while True not in status:
-    #     for i in range(10):
-    #         status = model.step()
-    #     #reset mesa model 
     chosen_objects = []
     winners = []
+    winner_arguments = []
     random_criterion_preferences=True
-    for i in range(100): 
+    for i in range(1000): 
         chosen_object, winning_agent = one_game(random_criterion_preferences=random_criterion_preferences)
         chosen_objects.append(chosen_object)
         winners.append(winning_agent)
-    #print(chosen_object.get_name())
-    #print(winning_agent.profile[0])
-    #print(proposed_winning_items)
-    #print(used_arguments)
+        print(winning_agent)
+        if random_criterion_preferences:
+            winner_arguments.append(winning_agent.used_arguments)
+
     if not random_criterion_preferences:
         counter_one_win = sum(winners)
         counter_zero_win = len(winners) - counter_one_win
@@ -628,5 +621,9 @@ if __name__ == "__main__":
     print(counter)
     #plot counter as a bar chart
     import matplotlib.pyplot as plt
+    plt.bar(counter.keys(), counter.values())
+    plt.show()
+    #print how many time each argument was used
+    counter = counter_criterion_type(winner_arguments)
     plt.bar(counter.keys(), counter.values())
     plt.show()

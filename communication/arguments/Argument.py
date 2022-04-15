@@ -46,7 +46,7 @@ class Argument:
         for i, criterion_name in enumerate(pref_ordered):
             value = preferences.get_value(item, criterion_name)
 
-            if value.value >=2: # 2 : Average
+            if value.value >=3: # 2 : Average
                 list_supporting_proposals.append(criterion_name)
                 self.add_premiss_couple_values(criterion_name, value)
                 for criterion_name_2 in pref_ordered[i+1:]:
@@ -66,7 +66,7 @@ class Argument:
         for i, criterion_name in enumerate(pref_ordered):
             value = preferences.get_value(item, criterion_name)
             #print(value.value)
-            if value.value <=1: # 1: Bad
+            if value.value <=2: # 1: Bad
                 list_attacking_proposals.append(criterion_name)
                 self.add_premiss_couple_values(criterion_name, value)
                 for criterion_name_2 in pref_ordered[i+1:]:
