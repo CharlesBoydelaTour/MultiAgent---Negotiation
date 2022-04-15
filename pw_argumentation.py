@@ -29,8 +29,8 @@ class ArgumentAgent(CommunicatingAgent):
         #self.list_of_items = [i.get_name() for i in self.model.list_of_items]
         self.list_of_items = self.model.list_of_items
         self.profile = model.profiles[unique_id]
-        #self.preference = self.generate_manual_preferences(self.list_of_items, self.profile)
-        self.preference = self.generate_random_preference(self.list_of_items)
+        self.preference = self.generate_manual_preferences(self.list_of_items, self.profile)
+        #self.preference = self.generate_random_preference(self.list_of_items)
         self.commit_item =[]
         self.not_proposed_items = [i.get_name() for i in self.list_of_items]
         self.proposed_items = []
@@ -49,7 +49,7 @@ class ArgumentAgent(CommunicatingAgent):
         list_messages = self.get_new_messages()
         
         if self.start == True:
-            print(self.list_of_items)
+            #print(self.list_of_items)
             item = self.preference.most_preferred([self.str_to_obj[item] for item in self.not_proposed_items])
             self.not_proposed_items.remove(item.get_name())
             #select a random agent to porpose item (not self)
@@ -429,7 +429,7 @@ class ArgumentAgent(CommunicatingAgent):
         """give a score for each item for each agent""" 
         preference = Preferences()
 
-        values = {1: Value.VERY_BAD, 2: Value.BAD, 3: Value.GOOD, 4: Value.VERY_GOOD}
+        values = {0: Value.VERY_BAD, 1: Value.BAD, 2: Value.AVERAGE, 3: Value.GOOD, 4: Value.VERY_GOOD}
         criterions = {0: CriterionName.PRODUCTION_COST, 1: CriterionName.CONSUMPTION, 
                       2: CriterionName.DURABILITY, 3: CriterionName.ENVIRONMENT_IMPACT,
                       4: CriterionName.NOISE}
@@ -451,6 +451,8 @@ class ArgumentAgent(CommunicatingAgent):
                 profile = profiles[2]
             elif str(item) == "Steam Engine (A steam-punk engine)":
                 profile = profiles[3]
+            elif str(item) == "Natural Gas (A compressed natural gas engine)":
+                profile = profiles[4]
             
             preference.add_criterion_value(CriterionValue(item, CriterionName.PRODUCTION_COST,
                                                       values[profile[0]]))
@@ -478,9 +480,10 @@ class ArgumentModel(Model):
         diesel_engine = Item("Diesel Engine", "A super cool diesel engine")
         electric_engine = Item("Electric Engine", "A very quiet engine")
         steam_engine = Item("Steam Engine", "A steam-punk engine")
+        natural_gas = Item("Natural Gas", "A compressed natural gas engine")
         self.profiles = profiles
 
-        self.list_of_items = [diesel_engine, electric_engine, steam_engine]
+        self.list_of_items = [diesel_engine, electric_engine, steam_engine, natural_gas]
         self.item_values = self.generate_item_values()
         self.list_of_agents = []
         
@@ -525,9 +528,15 @@ class ArgumentModel(Model):
             
 def one_game():
     
+    #scores : [cost of production, consumption, durability, environment impact, noise]  total = 12
+    diesel_engine_scores = [3, 3, 4, 1, 1]
+    electric_engine_scores = [0, 4, 1, 2, 4]
+    steam_engine_scores = [1, 3, 3, 3, 2]
+    natural_gas_scores = [1, 2, 4, 3, 2]
+    
     status = [False]
-    agent0_profile = [[0,3,1,2,4],[3, 2, 2, 3, 1],[3, 2, 2, 3, 1], [4, 1, 3, 2, 1]]
-    agent1_profile = [[3,4,0,1,2],[3, 2, 1, 2, 3],[2, 2, 2, 3, 3], [4, 1, 3, 1, 1]]
+    agent0_profile = [[0,3,1,2,4],diesel_engine_scores, electric_engine_scores, steam_engine_scores, natural_gas_scores]
+    agent1_profile = [[3,4,0,1,2],diesel_engine_scores, electric_engine_scores, steam_engine_scores, natural_gas_scores]
     player_list = [agent0_profile,agent1_profile]
     #shuffle player list to randomize the order of players
     starting_agent, next_agent = random.sample(player_list, 2) 
