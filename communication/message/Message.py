@@ -51,9 +51,14 @@ class Message:
         
         decision, item, argument = arg
         if decision:
-            str = f"{item.get_name()}\t<=\t"
+            str = f"{item.get_name()}\t"
         else:
-            str = f"not {item.get_name()} \t<=\t"
-        for element in argument:
-            str += element.__str__() + ',  '
+            str = f"not {item.get_name()}"
+        
+        if len(argument) > 0:
+            str += '\t<=\t'
+
+            for element in argument:
+                str += element.__str__() + ',  '
+                
         return str
