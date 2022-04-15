@@ -530,13 +530,16 @@ def one_game():
     
     #scores : [cost of production, consumption, durability, environment impact, noise]  total = 12
     diesel_engine_scores = [3, 3, 4, 1, 1]
-    electric_engine_scores = [0, 4, 1, 2, 4]
+    electric_engine_scores = [0, 4, 2, 2, 4]
     steam_engine_scores = [1, 3, 3, 3, 2]
     natural_gas_scores = [1, 2, 4, 3, 2]
+    agent0_preferences = generate_preferences() #[0,3,1,2,4]
+    agent1_preferences = generate_preferences() #[3,4,0,1,2]
     
     status = [False]
-    agent0_profile = [[0,3,1,2,4],diesel_engine_scores, electric_engine_scores, steam_engine_scores, natural_gas_scores]
-    agent1_profile = [[3,4,0,1,2],diesel_engine_scores, electric_engine_scores, steam_engine_scores, natural_gas_scores]
+    
+    agent0_profile = [agent0_preferences,diesel_engine_scores, electric_engine_scores, steam_engine_scores, natural_gas_scores]
+    agent1_profile = [agent1_preferences,diesel_engine_scores, electric_engine_scores, steam_engine_scores, natural_gas_scores]
     player_list = [agent0_profile,agent1_profile]
     #shuffle player list to randomize the order of players
     starting_agent, next_agent = random.sample(player_list, 2) 
@@ -564,7 +567,13 @@ def find_winning_agent(model):
             winning_value = object_value
             winning_agent = agent
     return winning_agent
-    
+
+def generate_preferences():
+    # generate a list [?,?,?,?,?] with integer from 0 to 4
+    list = [0,1,2,3,4]
+    randomised_list = random.sample(list, 5)
+    return randomised_list
+        
 def find_list_of_arguments(model):
     list_of_arguments = []
     for agent in model.list_of_agents:
