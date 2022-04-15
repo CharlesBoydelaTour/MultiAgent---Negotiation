@@ -187,7 +187,9 @@ class ArgumentAgent(CommunicatingAgent):
                         #Check if I have a better item in this criterion
                         for my_item in self.list_of_items:
                             if my_item != item:
-                                value_my_item = self.preference.get_value(item, adv_criterion)
+                                value_my_item = self.preference.get_value(my_item, adv_criterion) ### y avait une erreur qui changeait tout c'était
+                                                                                                  # get_value(item...) au lieu de my_item
+                                                                                                  # c pk le 2eme agent ne proposait jamais
                                 if value_my_item.value > adv_value.value:
                                     
                                     my_argument = [CoupleValue(adv_criterion, value_my_item), str(value_my_item.name) + ' is better than ' + str(adv_value.name)]
@@ -251,7 +253,7 @@ class ArgumentAgent(CommunicatingAgent):
 
                         for my_item in self.list_of_items:
                             if my_item != item:
-                                value_my_item = self.preference.get_value(item, adv_criterion)
+                                value_my_item = self.preference.get_value(my_item, adv_criterion)
                                 if value_my_item.value > adv_value.value:
                                     
                                     my_argument = [CoupleValue(adv_criterion, value_my_item), str(value_my_item.name) + ' is better than ' + str(adv_value.name)]
