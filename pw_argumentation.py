@@ -526,36 +526,39 @@ class ArgumentModel(Model):
             
 
             
-def one_game():
+def one_game(random_criterion_preferences=True):
     
     #scores : [cost of production, consumption, durability, environment impact, noise]  total = 12
     diesel_engine_scores = [3, 3, 4, 1, 1]
     electric_engine_scores = [0, 4, 2, 2, 4]
     steam_engine_scores = [1, 3, 3, 3, 2]
     natural_gas_scores = [1, 2, 4, 3, 2]
-    agent0_preferences = generate_preferences() #[0,3,1,2,4]
-    agent1_preferences = generate_preferences() #[3,4,0,1,2]
-    
+    if random_criterion_preferences:
+        agent0_preferences = generate_preferences() #[0,3,1,2,4]
+        agent1_preferences = generate_preferences() #[3,4,0,1,2]
+    else :
+        agent0_preferences = (0,3,1,2,4)
+        agent1_preferences = (3,4,0,1,2)
+        preferences_to_agent = {agent0_preferences:0, agent1_preferences:1}
+        
     status = [False]
-    
     agent0_profile = [agent0_preferences,diesel_engine_scores, electric_engine_scores, steam_engine_scores, natural_gas_scores]
     agent1_profile = [agent1_preferences,diesel_engine_scores, electric_engine_scores, steam_engine_scores, natural_gas_scores]
     player_list = [agent0_profile,agent1_profile]
     #shuffle player list to randomize the order of players
     starting_agent, next_agent = random.sample(player_list, 2) 
+    print("Agent0 criterion preferences: ", starting_agent[0])
+    print("Agent1 criterion preferences: ", next_agent[0])
     model = ArgumentModel(profiles=[starting_agent, next_agent])
     while True not in status:
         status = model.step()
     chosen_object = model.list_of_agents[0].commit_item[0]
     winning_agent = find_winning_agent(model)
-    list_of_items = [i.get_name() for i in winning_agent.list_of_items]
-    proposed_winning_items = []
-    for item in list_of_items:
-        if item not in winning_agent.not_proposed_items:
-            proposed_winning_items.append(item)
-    used_arguments = winning_agent.used_arguments
+    
+    if not random_criterion_preferences:
+        winning_agent = preferences_to_agent[winning_agent.profile[0]]
         
-    return chosen_object, winning_agent, proposed_winning_items, used_arguments
+    return chosen_object, winning_agent
     
     
 def find_winning_agent(model):
@@ -578,7 +581,16 @@ def find_list_of_arguments(model):
     list_of_arguments = []
     for agent in model.list_of_agents:
         list_of_arguments.append(agent.used_arguments)
-    
+
+def counter_item_type(items):
+    """count the number of items of each type"""
+    counter = {}
+    for item in items:
+        if item.get_name() in counter:
+            counter[item.get_name()] += 1
+        else:
+            counter[item.get_name()] = 1
+    return counter
 
 if __name__ == "__main__":
     # for i in range(1):
@@ -588,8 +600,26 @@ if __name__ == "__main__":
     #     for i in range(10):
     #         status = model.step()
     #     #reset mesa model 
-    chosen_object, winning_agent, proposed_winning_items, used_arguments = one_game()
-    print(chosen_object.get_name())
-    print(winning_agent.id)
-    print(proposed_winning_items)
-    print(used_arguments)
+    chosen_objects = []
+    winners = []
+    random_criterion_preferences=True
+    for i in range(100): 
+        chosen_object, winning_agent = one_game(random_criterion_preferences=random_criterion_preferences)
+        chosen_objects.append(chosen_object)
+        winners.append(winning_agent)
+    #print(chosen_object.get_name())
+    #print(winning_agent.profile[0])
+    #print(proposed_winning_items)
+    #print(used_arguments)
+    if not random_criterion_preferences:
+        counter_one_win = sum(winners)
+        counter_zero_win = len(winners) - counter_one_win
+        print(f"Number of times agent 0 won: {counter_one_win}")
+        print(f"Number of times agent 1 won: {counter_zero_win}")
+    #print how many times each item was chosen
+    counter = counter_item_type(chosen_objects)
+    print(counter)
+    #plot counter as a bar chart
+    import matplotlib.pyplot as plt
+    plt.bar(counter.keys(), counter.values())
+    plt.show()
