@@ -180,7 +180,10 @@ class ArgumentAgent(CommunicatingAgent):
             
                 if len(new_argument.List_attacking_proposal(item, self.preference)) == 0:
                     #take out item from list of not proposed items
-                    self.send_message(Message(self.get_name(), sender, MessagePerformative.ACCEPT, item))
+                    ##################################################################
+                    content = True, item, ''  # j'ai ajoute ca
+                    self.send_message(Message(self.get_name(), sender, MessagePerformative.ACCEPT, content)) # j'ai corrige content ai lieu item
+                    ###################################################################
                 
                 else:
                     adv_criterion = argument[0].get_criterion()
