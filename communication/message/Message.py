@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+from communication.message.MessagePerformative import MessagePerformative
 
 class Message:
     """Message class.
@@ -47,18 +48,30 @@ class Message:
         """
         return self.__content
     
+
     def _strcontent_(self, arg):
         
         decision, item, argument = arg
+        
         if decision:
-            str = f"{item.get_name()}\t"
+                
+            if self.__message_performative == MessagePerformative.PROPOSE:
+            
+                str = f"\t{item}\t"
+            
+            elif self.__message_performative == MessagePerformative.ASK_WHY:
+                str = f"\tWHY {item.get_name()}  ?\t"
+        
+            else:
+                str = f"\t{item.get_name()}\t"
+
         else:
-            str = f"not {item.get_name()}"
+            str = f"\tnot {item.get_name()}"
         
         if len(argument) > 0:
             str += '\t<=\t'
 
             for element in argument:
                 str += element.__str__() + ',  '
-                
+
         return str
