@@ -65,6 +65,23 @@ class ArgumentAgent(CommunicatingAgent):
                 print(message)
                 #treat message
                 self.treat_message(message)
+            ##############################################################################################
+            # A remplacer la boucle for par ce block pour permetre de générer des propose suivies de argue
+            """
+            elif len(list_messages)==1:
+                print(list_messages[0])
+                self.treat_message(list_messages[0])
+            elif len(list_messages)==2:
+                for message in list_messages:
+                    performative = message.get_performative()
+                    if performative == MessagePerformative.PROPOSE:
+                        print(message)
+                    elif performative == MessagePerformative.ARGUE:
+                        print(message)
+                        #treat message
+                        self.treat_message(message)
+            """
+            #################################################################################################
 
     """
     def select_argument(self, arguments, used_arguments):
@@ -204,13 +221,18 @@ class ArgumentAgent(CommunicatingAgent):
                 ### dans ce cas on assure que les deux agents peuvent proposer
                 ### pk envoyer 2 messages et non pas un seul: si on envoie juste propose, l'autre demande why, et on risque de
                 ### lui répondre par un autre critère (dans ce cas on perd l'acheminement logique
-                """
+                                    """
                                     new_item = True, my_item, ''
                                     self.send_message(Message(self.get_name(), sender, MessagePerformative.PROPOSE, new_item))
                                     my_argument = [CoupleValue(adv_criterion, value_my_item)]
                                     my_message = True, my_item, my_argument
                                     self.send_message(Message(self.get_name(), sender, MessagePerformative.ARGUE, my_message))
-                """
+                                    """
+                ### Attention 1: pour ne pas proposer un item déjà proposé, on change list_of items en haut par not_proposed
+                        """
+                        not_proposed_object = [self.str_to_obj[item] for item in self.not_proposed_items]
+                        for my_item in not_proposed_object:
+                        """
                 ### ATTENTION: je pense que dans ce cas pour que l'autre ne fait pas un ask_why, on modifie dans la condition
                 ### de lecture de messages.  Si len(new_messages) == 2: on check le type  puis on print le propose, puis print 
                 ### le 2eme message qui est arg et  le traiter
@@ -268,13 +290,18 @@ class ArgumentAgent(CommunicatingAgent):
                 ### dans ce cas on assure que les deux agents peuvent proposer
                 ### pk envoyer 2 messages et non pas un seul: si on envoie juste propose, l'autre demande why, et on risque de
                 ### lui répondre par un autre critère (dans ce cas on perd l'acheminement logique
-                """
+                                    """
                                     new_item = True, my_item, ''
                                     self.send_message(Message(self.get_name(), sender, MessagePerformative.PROPOSE, new_item))
                                     my_argument = [CoupleValue(adv_criterion, value_my_item)]
                                     my_message = True, my_item, my_argument
                                     self.send_message(Message(self.get_name(), sender, MessagePerformative.ARGUE, my_message))
-                """
+                                    """
+                ### Attention 1: pour ne pas proposer un item déjà proposé, on change list_of items en haut par not_proposed
+                        """
+                        not_proposed_object = [self.str_to_obj[item] for item in self.not_proposed_items]
+                        for my_item in not_proposed_object:
+                        """
                 ### ATTENTION: je pense que dans ce cas pour que l'autre ne fait pas un ask_why, on modifie dans la condition
                 ### de lecture de messages.  Si len(new_messages) == 2: on check le type  puis on print le propose, puis print 
                 ### le 2eme message qui est arg et  le traiter
@@ -431,7 +458,7 @@ class ArgumentAgent(CommunicatingAgent):
                                                       values[profile[3]]))
             preference.add_criterion_value(CriterionValue(item, CriterionName.NOISE,
                                                           values[profile[4]]))
-            return preference
+        return preference
         
 
 
