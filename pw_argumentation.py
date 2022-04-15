@@ -49,13 +49,13 @@ class ArgumentAgent(CommunicatingAgent):
         list_messages = self.get_new_messages()
         
         if self.start == True:
-            #print(self.list_of_items)
+
             item = self.preference.most_preferred([self.str_to_obj[item] for item in self.not_proposed_items])
             self.not_proposed_items.remove(item.get_name())
             #select a random agent to porpose item (not self)
             dest_id = self.id+1
             dest = self.model.schedule.agents[dest_id]
-            #print(self.model.schedule.agents)
+            
             item = True, item, ''
             self.send_message(Message(self.get_name(), dest.get_name(), MessagePerformative.PROPOSE, item))
             self.start = False
@@ -164,7 +164,7 @@ class ArgumentAgent(CommunicatingAgent):
                 ############################################################################################################
                 ### Je pense ici, arg sera toujours différent de None. En fait, il vient de proposer cet item,
                 ### donc la liste des used argument pour cet item est toujours vide
-                ### Donc on peut éliminer le else en bas
+                ### Donc on peut éliminer le else en bas, on le laisse pour l'instant
                 ############################################################################################################
 
                 if arg != None: 
@@ -178,17 +178,15 @@ class ArgumentAgent(CommunicatingAgent):
         #Respond to argue
         elif performative == MessagePerformative.ARGUE:
             
-            
             if decision == True:
-        
                 new_argument = Argument(False, item)
             
                 if len(new_argument.List_attacking_proposal(item, self.preference)) == 0:
                     #take out item from list of not proposed items
-                    ##################################################################
-                    content = True, item, ''  # j'ai ajoute ca
+                    
+                    content = True, item, ''  
                     self.send_message(Message(self.get_name(), sender, MessagePerformative.ACCEPT, content)) # j'ai corrige content ai lieu item
-                    ###################################################################
+                    
                 
                 else:
                     adv_criterion = argument[0].get_criterion()
@@ -209,7 +207,7 @@ class ArgumentAgent(CommunicatingAgent):
                                 value_my_item = self.preference.get_value(my_item, adv_criterion)
                                 if value_my_item.value > adv_value.value:
 
-                                    self.not_proposed_items.remove(my_item.get_name()) ########################################
+                                    self.not_proposed_items.remove(my_item.get_name()) 
                                     new_item = True, my_item, ''
                                     self.send_message(Message(self.get_name(), sender, MessagePerformative.PROPOSE, new_item))
                                     my_argument = [CoupleValue(adv_criterion, value_my_item)]
@@ -376,8 +374,6 @@ class ArgumentAgent(CommunicatingAgent):
                             ### Je pense là, on doit plutôt accepter le new_item parce qu'il a été déjà proposé par l'adversaire.
                             ### Plutôt que de le reproposer
                             """
-                            
-                            
                             self.not_proposed_items.remove(new_item.get_name())
                             new_item = True, new_item, ''
                             self.send_message(Message(self.get_name(), sender, MessagePerformative.PROPOSE, new_item))
@@ -411,7 +407,7 @@ class ArgumentAgent(CommunicatingAgent):
                                        CriterionName.NOISE]
         #randomised list_criterion order
         list_criterion = random.sample(list_criterion, len(list_criterion))
-        #print(list_criterion)
+
         preference.set_criterion_name_list(list_criterion)
         
         values = {0: Value.VERY_BAD, 1: Value.BAD, 2: Value.AVERAGE, 3: Value.GOOD, 4: Value.VERY_GOOD}
@@ -428,7 +424,7 @@ class ArgumentAgent(CommunicatingAgent):
            preference.add_criterion_value(CriterionValue(item, CriterionName.NOISE,
                                                       values[item_values[i][4]]))
            i=i+1
-        print(values[item_values[i-1][4]].value)
+
         return preference
 
     def generate_manual_preferences(self, list_of_items, profiles ):
@@ -444,13 +440,12 @@ class ArgumentAgent(CommunicatingAgent):
         criterion_name_list = []
         for i in profiles[0]:
             criterion_name_list.append(criterions[i])
-        #print(criterion_name_list)
+
         preference.set_criterion_name_list(criterion_name_list)
 
         
         for item in list_of_items:
-            #print(item)
-            #print(list_of_items[2])
+
 
             if str(item) == "Diesel Engine (A super cool diesel engine)":
                 profile = profiles[1]
@@ -472,7 +467,7 @@ class ArgumentAgent(CommunicatingAgent):
             preference.add_criterion_value(CriterionValue(item, CriterionName.NOISE,
                                                           values[profile[4]]))
             
-            #print(values[profile[4]])
+
         return preference
         
 
