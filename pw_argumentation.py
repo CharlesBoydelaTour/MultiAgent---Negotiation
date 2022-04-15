@@ -242,7 +242,7 @@ class ArgumentAgent(CommunicatingAgent):
 
                                     break
                         
-                        if not passer and my_value.value <= 2:
+                        if not passer and my_value.value <= 1:
                                 #my_argument = [CoupleValue(adv_criterion, my_value), str(my_value.name) + ' is worst than ' + str(adv_value.name)]
                                 my_argument = [CoupleValue(adv_criterion, my_value)]
                                 my_message = False, item, my_argument
