@@ -145,8 +145,14 @@ class ArgumentAgent(CommunicatingAgent):
                 decision, item, args = new_argument.argument_why(item, self.preference) #arg_why = decision, item, argument
                 
                 arg = self.select_argument(item, args, self.used_arguments)
+                
+                ############################################################################################################
+                ### Je pense ici, arg sera toujours différent de None. En fait, il vient de proposer cet item,
+                ### donc la liste des used argument pour cet item est toujours vide
+                ### Donc on peut éliminer le else en bas
+                ############################################################################################################
 
-                if arg != None:
+                if arg != None: 
                     self.used_arguments.append((item, self.get_argument(arg)) )
                     arg_why = decision, item, arg
                     self.send_message(Message(self.get_name(), sender, MessagePerformative.ARGUE, arg_why))
@@ -156,29 +162,29 @@ class ArgumentAgent(CommunicatingAgent):
         
         #Respond to argue
         elif performative == MessagePerformative.ARGUE:
+            
+            
             if decision == True:
-
-                
+        
                 new_argument = Argument(False, item)
+            
                 if len(new_argument.List_attacking_proposal(item, self.preference)) == 0:
                     #take out item from list of not proposed items
                     self.send_message(Message(self.get_name(), sender, MessagePerformative.ACCEPT, item))
+                
                 else:
-                    
-
                     adv_criterion = argument[0].get_criterion()
                     
                     
-                    if len(argument) == 1:
+                    if len(argument) == 1: # This is the case when we receive a response to Ask_why
                         adv_value = argument[0].get_value()
                         
-                        
-
-                        
+                        #Calculate my evaluation for the item in this criterion
                         my_value = self.preference.get_value(item, adv_criterion)
                         
                         passer = False
-
+                        
+                        #Check if I have a better item in this criterion
                         for my_item in self.list_of_items:
                             if my_item != item:
                                 value_my_item = self.preference.get_value(item, adv_criterion)
@@ -187,6 +193,27 @@ class ArgumentAgent(CommunicatingAgent):
                                     my_argument = [CoupleValue(adv_criterion, value_my_item), str(value_my_item.name) + ' is better than ' + str(adv_value.name)]
                                     my_message = True, my_item, my_argument
                                     self.send_message(Message(self.get_name(), sender, MessagePerformative.ARGUE, my_message))
+
+                ############################################################################################################
+                ### La, j'ai un item qui est meilleur pour ce critère. en algo sur pdf, il faut répondre par argue avec 
+                ### ce new item.
+                ### Ce que je propose, c'est d'envoyer deux messages: Propose(new_item) et puis un argument justificatif
+                ### l'argument justificatif sera sous la forme d'une réponse à ask_why : argue item criterion = value
+                ### dans ce cas on assure que les deux agents peuvent proposer
+                ### pk envoyer 2 messages et non pas un seul: si on envoie juste propose, l'autre demande why, et on risque de
+                ### lui répondre par un autre critère (dans ce cas on perd l'acheminement logique
+                """
+                                    new_item = True, my_item, ''
+                                    self.send_message(Message(self.get_name(), sender, MessagePerformative.PROPOSE, new_item))
+                                    my_argument = [CoupleValue(adv_criterion, value_my_item)]
+                                    my_message = True, my_item, my_argument
+                                    self.send_message(Message(self.get_name(), sender, MessagePerformative.ARGUE, my_message))
+                """
+                ### ATTENTION: je pense que dans ce cas pour que l'autre ne fait pas un ask_why, on modifie dans la condition
+                ### de lecture de messages.  Si len(new_messages) == 2: on check le type  puis on print le propose, puis print 
+                ### le 2eme message qui est arg et  le traiter
+               
+                ############################################################################################################                                    
                                     
 
                                     passer = True
@@ -209,7 +236,6 @@ class ArgumentAgent(CommunicatingAgent):
 
                             if arg != None:
                                 self.used_arguments.append((item, self.get_argument(arg)) )
-
                                 arg_to_arg = decision, item, arg
                                 self.send_message(Message(self.get_name(), sender, MessagePerformative.ARGUE, arg_to_arg))
                             else:
@@ -231,16 +257,33 @@ class ArgumentAgent(CommunicatingAgent):
                                     my_argument = [CoupleValue(adv_criterion, value_my_item), str(value_my_item.name) + ' is better than ' + str(adv_value.name)]
                                     my_message = True, my_item, my_argument
                                     self.send_message(Message(self.get_name(), sender, MessagePerformative.ARGUE, my_message))
-
+                                    
+                ############################################################################################################
+                ### La, j'ai un item qui est meilleur pour ce critère. en algo sur pdf, il faut répondre par argue avec 
+                ### ce new item.
+                ### Ce que je propose, c'est d'envoyer deux messages: Propose(new_item) et puis un argument justificatif
+                ### l'argument justificatif sera sous la forme d'une réponse à ask_why : argue item criterion = value
+                ### dans ce cas on assure que les deux agents peuvent proposer
+                ### pk envoyer 2 messages et non pas un seul: si on envoie juste propose, l'autre demande why, et on risque de
+                ### lui répondre par un autre critère (dans ce cas on perd l'acheminement logique
+                """
+                                    new_item = True, my_item, ''
+                                    self.send_message(Message(self.get_name(), sender, MessagePerformative.PROPOSE, new_item))
+                                    my_argument = [CoupleValue(adv_criterion, value_my_item)]
+                                    my_message = True, my_item, my_argument
+                                    self.send_message(Message(self.get_name(), sender, MessagePerformative.ARGUE, my_message))
+                """
+                ### ATTENTION: je pense que dans ce cas pour que l'autre ne fait pas un ask_why, on modifie dans la condition
+                ### de lecture de messages.  Si len(new_messages) == 2: on check le type  puis on print le propose, puis print 
+                ### le 2eme message qui est arg et  le traiter
+               
+                ############################################################################################################    
+                
                                     passer = True
 
                                     break
 
                         if not passer:
-
-                            
-
-
 
                             decision, item, args = new_argument.argument_to_argument(item, self.preference, adv_criterion)
                             arg = self.select_argument(item, args, self.used_arguments)
@@ -256,8 +299,6 @@ class ArgumentAgent(CommunicatingAgent):
                                 self.send_message(Message(self.get_name(), sender, MessagePerformative.ACCEPT, content))
 
 
-                                     
-
 
             else: 
                 new_argument = Argument(True, item)
@@ -266,6 +307,14 @@ class ArgumentAgent(CommunicatingAgent):
                     if len(self.not_proposed_items) == 0 :
                         #take an item proposed by the other agent
                         new_item = self.preference.most_preferred([self.str_to_obj[item] for item in self.proposed_items])
+                        ####################################################################################################
+                        ### Je pense là, on doit plutôt accepter le new_item parce qu'il a été déjà proposé par l'adversaire.
+                        ### Plutôt que de le reproposer
+                        """
+                        content = True, new_item, ''
+                        self.send_message(Message(self.get_name(), sender, MessagePerformative.ACCEPT, content))
+                        """
+                        #####################################################################################################
                         self.not_proposed_items.remove(new_item.get_name())
                         new_item = True, new_item, ''
                         self.send_message(Message(self.get_name(), sender, MessagePerformative.PROPOSE, new_item))
@@ -291,6 +340,16 @@ class ArgumentAgent(CommunicatingAgent):
                         if len(self.not_proposed_items) == 0 :
                             #take an item proposed by the other agent
                             new_item = self.preference.most_preferred([self.str_to_obj[item] for item in self.proposed_items])
+                            
+                            ####################################################################################################
+                            ### Je pense là, on doit plutôt accepter le new_item parce qu'il a été déjà proposé par l'adversaire.
+                            ### Plutôt que de le reproposer
+                            """
+                            content = True, new_item, ''
+                            self.send_message(Message(self.get_name(), sender, MessagePerformative.ACCEPT, content))
+                            """
+                            #####################################################################################################
+                        
                             self.not_proposed_items.remove(new_item.get_name())
                             new_item = True, new_item, ''
                             self.send_message(Message(self.get_name(), sender, MessagePerformative.PROPOSE, new_item))
